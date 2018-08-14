@@ -62,6 +62,10 @@ namespace WinCertes
         /// <returns></returns>
         public static bool ExecutePowerShell(string scriptFile, AuthenticatedPFX pfx)
         {
+            if (scriptFile == null)
+            {
+                return false;
+            }
             try
             {
                 // First let's create the execution runspace
@@ -102,6 +106,10 @@ namespace WinCertes
         /// <returns>true in case of success, false otherwise</returns>
         public static bool BindCertificateForIISSite(X509Certificate2 certificate, string siteName)
         {
+            if (siteName == null)
+            {
+                return false;
+            }
             try
             {
                 ServerManager mgr = new ServerManager();

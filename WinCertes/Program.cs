@@ -11,6 +11,51 @@ using System.IO;
 
 namespace WinCertes
 {
+    class WinCertesOptions
+    {
+        public WinCertesOptions()
+        {
+            ServiceUri = null;
+            Email = null;
+            WebRoot = null;
+            BindName = null;
+            ScriptFile = null;
+            Standalone = false;
+            Revoke = false;
+            Csp = null;
+        }
+        public string ServiceUri { get; set; }
+        public string Email { get; set; }
+        public string WebRoot { get; set; }
+        public string BindName { get; set; }
+        public string ScriptFile { get; set; }
+        public bool Standalone { get; set; }
+        public bool Revoke { get; set; }
+        public string Csp { get; set; }
+
+        public void WriteOptionsIntoConfiguration(IConfig config)
+        {
+            // write service URI into conf, or reads from it, if any
+            ServiceUri = config.WriteAndReadStringParameter("serviceUri", ServiceUri);
+            // write account email into conf, or reads from it, if any
+            Email = config.WriteAndReadStringParameter("accountEmail", Email);
+            // Should we work with the built-in web server
+            Standalone = config.WriteAndReadBooleanParameter("standalone", Standalone);
+            // do we have a webroot parameter to handle?
+            WebRoot = config.WriteAndReadStringParameter("webRoot", WebRoot);
+            // if not, let's use the default web root of IIS
+            if ((WebRoot == null) && (!Standalone))
+            {
+                WebRoot = "c:\\inetpub\\wwwroot";
+                config.WriteStringParameter("webRoot", WebRoot);
+            }
+            // Should we bind to IIS? If yes, let's do some config
+            BindName = config.WriteAndReadStringParameter("bindName", BindName);
+            // Should we execute some PowerShell ? If yes, let's do some config
+            ScriptFile = config.WriteAndReadStringParameter("scriptFile", ScriptFile);
+        }
+    }
+
     class Program
     {
         private static readonly ILogger _logger = LogManager.GetLogger("WinCertes");
@@ -123,37 +168,29 @@ namespace WinCertes
         static void Main(string[] args)
         {
             // Main parameters with their default values
-            string serviceUri = null;
-            string email = null;
+            WinCertesOptions winCertesOptions = new WinCertesOptions();
             List<string> domains = new List<string>();
-            string webRoot = null;
             bool periodic = false;
-            string bindName = null;
-            string scriptFile = null;
-            bool standalone = false;
-            bool revoke = false;
-            string csp = null;
             // Options that can be used by this application
             OptionSet options = new OptionSet()
             {
-                { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => serviceUri = v },
-                { "e|email=", "the account email to be used for ACME requests (optional, defaults to no email)", v => email = v },
+                { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => winCertesOptions.ServiceUri = v },
+                { "e|email=", "the account email to be used for ACME requests (optional, defaults to no email)", v => winCertesOptions.Email = v },
                 { "d|domain=", "the domain(s) to enroll (mandatory) *", v => domains.Add(v) },
-                { "w|webroot=", "the web server root directory (optional, defaults to c:\\inetpub\\wwwroot)", v => webRoot = v },
+                { "w|webroot=", "the web server root directory (optional, defaults to c:\\inetpub\\wwwroot)", v => winCertesOptions.WebRoot = v },
                 { "p|periodic", "should WinCertes create the Windows Scheduler task to handle certificate renewal (default=no) *", v => periodic = (v != null) },
-                { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\".", v => bindName = v },
-                { "f|scriptfile=", "PowerShell Script file e.g. \"C:\\Temp\\script.ps1\" to execute upon successful enrollment (default=none)", v => scriptFile = v },
-                { "a|standalone", "should WinCertes create its own WebServer for validation (default=no). WARNING: it will use port 80", v => standalone = (v != null) },
-                { "r|revoke", "should WinCertes revoke the certificate identified by its domains (incompatible with other parameters except -d)", v => revoke = (v != null) },
-                { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => csp = v }
+                { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\".", v => winCertesOptions.BindName = v },
+                { "f|scriptfile=", "PowerShell Script file e.g. \"C:\\Temp\\script.ps1\" to execute upon successful enrollment (default=none)", v => winCertesOptions.ScriptFile = v },
+                { "a|standalone", "should WinCertes create its own WebServer for validation (default=no). WARNING: it will use port 80", v => winCertesOptions.Standalone = (v != null) },
+                { "r|revoke", "should WinCertes revoke the certificate identified by its domains (incompatible with other parameters except -d)", v => winCertesOptions.Revoke = (v != null) },
+                { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => winCertesOptions.Csp = v }
             };
             // and the handling of these options
             List<string> res;
             try
             {
                 res = options.Parse(args);
-            }
-            catch(Exception e)
+            } catch(Exception e)
             {
                 Console.WriteLine("WinCertes.exe: " + e.Message);
                 options.WriteOptionDescriptions(Console.Out);
@@ -179,23 +216,10 @@ namespace WinCertes
             Utils.ConfigureLogger(_winCertesPath);
 
             _config = new RegistryConfig();
-            // Should we work with the built-in web server
-            standalone = _config.WriteAndReadBooleanParameter("standalone", standalone);
-            // do we have a webroot parameter to handle?
-            webRoot = _config.WriteAndReadStringParameter("webRoot", webRoot);
-            // if not, let's use the default web root of IIS
-            if ((webRoot==null)&&(!standalone))
-            {
-                webRoot = "c:\\inetpub\\wwwroot";
-                _config.WriteStringParameter("webRoot", webRoot);
-            }
-            // Should we bind to IIS? If yes, let's do some config
-            bindName = _config.WriteAndReadStringParameter("bindName", bindName);
-            // Should we execute some PowerShell ? If yes, let's do some config
-            scriptFile = _config.WriteAndReadStringParameter("scriptFile", scriptFile);
+            winCertesOptions.WriteOptionsIntoConfiguration(_config);
 
             // Is there an existing certificate that needs to be renewed ?
-            if (!IsThereCertificateAndIsItToBeRenewed(domains) && !revoke) {
+            if (!IsThereCertificateAndIsItToBeRenewed(domains) && !winCertesOptions.Revoke) {
                 _logger.Debug("No need to renew certificate");
                 if (periodic)
                 {
@@ -204,17 +228,24 @@ namespace WinCertes
                 return;
             }
 
-            // Initializing the CertesWrapper
-            InitCertesWrapper(serviceUri, email);
+            try
+            {
+                // Initializing the CertesWrapper
+                InitCertesWrapper(winCertesOptions.ServiceUri, winCertesOptions.Email);
+            } catch (Exception e)
+            {
+                _logger.Error(e.Message);
+                return;
+            }
 
-            if (revoke)
+            if (winCertesOptions.Revoke)
             {
                 RevokeCert(domains);
                 return;
             }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
-            IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(standalone, webRoot);
+            IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(winCertesOptions.Standalone, winCertesOptions.WebRoot);
             var result = Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(domains, challengeValidator)).GetAwaiter().GetResult();
             if (!result) { return; }
             challengeValidator.EndAllChallengeValidations();
@@ -222,25 +253,20 @@ namespace WinCertes
             // We get the certificate from the ACME service
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(domains[0],_winCertesPath,Utils.DomainsToFriendlyName(domains))).GetAwaiter().GetResult();
             if (pfxName==null) { return; }
-            AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.pfxPassword);
+            AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx);
-            certificateStorageManager.ProcessPFX((csp==null));
+            certificateStorageManager.ProcessPFX((winCertesOptions.Csp == null));
             // and we write its information to the WinCertes configuration
             RegisterCertificateIntoConfiguration(certificateStorageManager.certificate, domains);
             // Import the certificate into the Windows store
-            certificateStorageManager.ImportCertificateIntoCSP(csp);
+            certificateStorageManager.ImportCertificateIntoCSP(winCertesOptions.Csp);
 
-            if (bindName != null)
-            {
-                Utils.BindCertificateForIISSite(certificateStorageManager.certificate, bindName);
-            }
+            // Bind certificate to IIS Site (won't do anything if option is null)
+            Utils.BindCertificateForIISSite(certificateStorageManager.certificate, winCertesOptions.BindName);
 
-            // Is there any PS script to execute ?
-            if (scriptFile != null)
-            {
-                Utils.ExecutePowerShell(scriptFile, pfx);
-            }
-
+            // Execute PowerShell Script (won't do anything if option is null)
+            Utils.ExecutePowerShell(winCertesOptions.ScriptFile, pfx);
+ 
             // Should we create the AT task that will execute WinCertes periodically
             if (periodic)
             {

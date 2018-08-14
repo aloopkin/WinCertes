@@ -27,7 +27,7 @@ namespace WinCertes
     /// <seealso cref="Certes"/>
     public class CertesWrapper
     {
-        public string pfxPassword { get; set; }
+        public string PfxPassword { get; set; }
         private static readonly ILogger logger = LogManager.GetLogger("CertesWrapper");
         private IConfig _config;
         private CertesSettings _settings;
@@ -53,35 +53,21 @@ namespace WinCertes
             _config = new RegistryConfig();
 
             // Let's initialize the password
-            pfxPassword = Guid.NewGuid().ToString("N").Substring(0,16);
-            logger.Debug($"PFX password will be: {pfxPassword}");
+            PfxPassword = Guid.NewGuid().ToString("N").Substring(0,16);
+            logger.Debug($"PFX password will be: {PfxPassword}");
  
             // Dealing with Server URI
             if (serviceUri != null)
             {
                 _settings.ServiceURI = new Uri(serviceUri);
-                _config.WriteStringParameter("serviceUri", _settings.ServiceURI.ToString());
-            }
-            else if (_config.ReadStringParameter("serviceUri") != null)
-            {
-                _settings.ServiceURI = new Uri(_config.ReadStringParameter("serviceUri"));
             }
             else
             {
                 _settings.ServiceURI = WellKnownServers.LetsEncryptV2;
-                _config.WriteStringParameter("serviceUri", _settings.ServiceURI.ToString());
             }
             // Dealing with account email
-            if (accountEmail != null)
-            {
-                _settings.AccountEmail = accountEmail;
-                _config.WriteStringParameter("accountEmail", _settings.AccountEmail);
-            }
-            else
-            {
-                _settings.AccountEmail = _config.ReadStringParameter("accountEmail");
-            }
-            // Dealing with key
+            _settings.AccountEmail = accountEmail;
+             // Dealing with key
             if (_config.ReadStringParameter("accountKey") != null)
             {
                 _settings.AccountKey = KeyFactory.FromPem(_config.ReadStringParameter("accountKey"));
@@ -288,7 +274,7 @@ namespace WinCertes
                 // We build the PFX/PKCS#12
                 var pfx = cert.ToPfx(certKey);
                 pfx.AddIssuers(GetCACertChainFromStore());
-                var pfxBytes = pfx.Build(pfxFriendlyName, pfxPassword);
+                var pfxBytes = pfx.Build(pfxFriendlyName, PfxPassword);
                 var pfxName = Guid.NewGuid().ToString() + ".pfx";
 
                 // We write the PFX/PKCS#12 to file
