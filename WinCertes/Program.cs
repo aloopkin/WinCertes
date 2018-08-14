@@ -100,6 +100,24 @@ namespace WinCertes
             _config.WriteStringParameter("certSerial" + Utils.DomainsToHostId(domains), certificate.GetSerialNumberString());
         }
 
+        /// <summary>
+        /// Initializes the CertesWrapper, and registers the account if necessary
+        /// </summary>
+        /// <param name="serviceUri">the ACME service URI</param>
+        /// <param name="email">the email account used to register</param>
+        private static void InitCertesWrapper(string serviceUri, string email)
+        {
+            // We get the CertesWrapper object, that will do most of the job.
+            _certesWrapper = new CertesWrapper(serviceUri, email);
+
+            // If local computer's account isn't registered on the ACME service, we'll do it.
+            if (!_certesWrapper.IsAccountRegistered())
+            {
+                var regRes = Task.Run(() => _certesWrapper.RegisterNewAccount()).GetAwaiter().GetResult();
+                if (!regRes) { return; }
+            }
+        }
+
         static void Main(string[] args)
         {
             // Main parameters with their default values
@@ -107,7 +125,6 @@ namespace WinCertes
             string email = null;
             List<string> domains = new List<string>();
             string webRoot = null;
-            bool import = true;
             bool periodic = false;
             string bindName = null;
             string scriptFile = null;
@@ -151,9 +168,9 @@ namespace WinCertes
                 return;
             }
             domains.Sort();
-            if ((periodic || import) && (!Utils.IsAdministrator()))
+            if (!Utils.IsAdministrator())
             {
-                Console.WriteLine("WinCertes.exe must be called as Administrator for the requested task to complete");
+                Console.WriteLine("WinCertes.exe must be launched as Administrator");
                 return;
             }
             // Let's create the path where we will put the PFX files, and the log files
@@ -189,15 +206,8 @@ namespace WinCertes
                 return;
             }
 
-            // We get the CertesWrapper object, that will do most of the job.
-            _certesWrapper = new CertesWrapper(serviceUri,email);
-
-            // If local computer's account isn't registered on the ACME service, we'll do it.
-            if (!_certesWrapper.IsAccountRegistered())
-            {
-                var regRes = Task.Run(() => _certesWrapper.RegisterNewAccount()).GetAwaiter().GetResult();
-                if (!regRes) { return; }
-            }
+            // Initializing the CertesWrapper
+            InitCertesWrapper(serviceUri, email);
 
             if (revoke)
             {
