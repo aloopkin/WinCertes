@@ -211,8 +211,7 @@ namespace WinCertes
 
         static void Main(string[] args)
         {
-            if (!Utils.IsAdministrator())
-            {
+            if (!Utils.IsAdministrator()) {
                 Console.WriteLine("WinCertes.exe must be launched as Administrator");
                 return;
             }
@@ -234,12 +233,10 @@ namespace WinCertes
             _winCertesOptions.WriteOptionsIntoConfiguration(_config);
 
 
-            try
-            {
+            try {
                 // Initializing the CertesWrapper
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
-            } catch (Exception e)
-            {
+            } catch (Exception e) {
                 _logger.Error(e.Message);
                 return;
             }
