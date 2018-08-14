@@ -49,7 +49,7 @@ namespace WinCertes
     /// <summary>
     /// This class is a catalog of static methods to be used for various purposes within WinCertes
     /// </summary>
-    class Utils
+    public class Utils
     {
         private static readonly ILogger logger = LogManager.GetLogger("WinCertes.Utils");
 
@@ -229,7 +229,7 @@ namespace WinCertes
         {
             domains.Sort();
             string domainList = String.Join("-", domains);
-            return "_" + GetMD5Hash(MD5.Create(), domainList).Substring(0, 16);
+            return "_" + GetMD5Hash(MD5.Create(), domainList).Substring(0, 16).ToLower();
         }
 
         /// <summary>

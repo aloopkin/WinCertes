@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinCertes", "WinCertes\WinC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSIPackaging", "MSIPackaging\MSIPackaging.csproj", "{D7C78EA2-F59B-4352-B0FA-4A7DB069067A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinCertes.Test", "WinCertes.Test\WinCertes.Test.csproj", "{7934DF92-5054-4D80-8FBF-2FD06B9DA3DB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{D7C78EA2-F59B-4352-B0FA-4A7DB069067A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7C78EA2-F59B-4352-B0FA-4A7DB069067A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7C78EA2-F59B-4352-B0FA-4A7DB069067A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7934DF92-5054-4D80-8FBF-2FD06B9DA3DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7934DF92-5054-4D80-8FBF-2FD06B9DA3DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7934DF92-5054-4D80-8FBF-2FD06B9DA3DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7934DF92-5054-4D80-8FBF-2FD06B9DA3DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
