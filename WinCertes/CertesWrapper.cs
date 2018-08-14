@@ -142,12 +142,8 @@ namespace WinCertes
                     var httpChallenge = await authz.Http();
                     if (httpChallenge != null) {
                         var resValidation = await ValidateChallenge(httpChallenge, challengeValidator);
-                        if (!resValidation) {
-                            throw new Exception($"Could not validate challenge {httpChallenge.Location.ToString()}");
-                        }
-                    } else {
-                        throw new Exception("Only HTTP challenges are supported for now");
-                    }
+                        if (!resValidation) throw new Exception($"Could not validate challenge {httpChallenge.Location.ToString()}");
+                    } else throw new Exception("Only HTTP challenges are supported for now");
                 }
                 // If we are here, it means order was properly created, and authorizations & challenges were properly verified.
                 logger.Info($"Generated orders and validated challenges for domains: {String.Join(",", domains)}");
