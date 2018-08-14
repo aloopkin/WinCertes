@@ -19,6 +19,35 @@ namespace WinCertes
         private static IConfig _config;
         private static string _winCertesPath;
 
+        private static readonly string _additionalInfo = "\n*: these paremeters are not stored into configuration.\n\n"
+            + "Typical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
+            + "This will automatically create and register account with email me@example.com, and\n"
+            + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
+            + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
+            + "\"WinCertes.exe -d test1.example.com -d test2.example.com -r\" will revoke that certificate.";
+
+        /// <summary>
+        /// Checks whether the enrolled certificate should be renewed
+        /// </summary>
+        /// <param name="config">WinCertes config</param>
+        /// <returns>true if certificate must be renewed or does not exists, false otherwise</returns>
+        private static bool IsCertificateToBeRenewed(List<string> domains)
+        {
+            string certificateExpirationDate = _config.ReadStringParameter("certExpDate" + Utils.DomainsToHostId(domains));
+            _logger.Debug($"Current certificate expiration date is: {certificateExpirationDate}");
+            if ((certificateExpirationDate == null) || (certificateExpirationDate.Length == 0)) { return true; }
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            DateTime expirationDate = DateTime.Parse(certificateExpirationDate);
+            DateTime futureThresold = DateTime.Now.AddDays(_config.ReadIntParameter("renewalDays", 30));
+            _logger.Debug($"Expiration Thresold Date after delay: {futureThresold.ToString()}");
+            if (futureThresold > expirationDate) { return true; }
+            return false;
+        }
+
+        /// <summary>
+        /// Revoke certificate issued for specified list of domains
+        /// </summary>
+        /// <param name="domains"></param>
         private static void RevokeCert(List<string> domains)
         {
             string serial = _config.ReadStringParameter("certSerial" + Utils.DomainsToHostId(domains));
@@ -46,13 +75,29 @@ namespace WinCertes
             }
         }
 
-        private static void InitDirectory()
+        /// <summary>
+        /// Initializes WinCertes Directory path
+        /// </summary>
+        private static void InitWinCertesDirectoryPath()
         {
             _winCertesPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + "\\WinCertes";
             if (!System.IO.Directory.Exists(_winCertesPath))
             {
                 System.IO.Directory.CreateDirectory(_winCertesPath);
             }
+        }
+
+        /// <summary>
+        /// Registers certificate into configuration
+        /// </summary>
+        /// <param name="pfx"></param>
+        /// <param name="domains"></param>
+        private static void RegisterCertificateIntoConfiguration(X509Certificate2 certificate, List<string> domains)
+        {
+            // and we write its expiration date to the WinCertes configuration, into "InvariantCulture" date format
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            _config.WriteStringParameter("certExpDate" + Utils.DomainsToHostId(domains), certificate.GetExpirationDateString());
+            _config.WriteStringParameter("certSerial" + Utils.DomainsToHostId(domains), certificate.GetSerialNumberString());
         }
 
         static void Main(string[] args)
@@ -85,12 +130,6 @@ namespace WinCertes
                 { "r|revoke", "should WinCertes revoke the certificate identified by its domains (incompatible with other parameters except -d)", v => revoke = (v != null) },
                 { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => csp = v }
             };
-            string additionalInfo = "\n*: these paremeters are not stored into configuration.\n\n"
-                + "Typical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
-                + "This will automatically create and register account with email me@example.com, and\n"
-                + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
-                + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
-                + "\"WinCertes.exe -d test1.example.com -d test2.example.com -r\" will revoke that certificate.";
             // and the handling of these options
             List<string> res;
             try
@@ -101,14 +140,14 @@ namespace WinCertes
             {
                 Console.WriteLine("WinCertes.exe: " + e.Message);
                 options.WriteOptionDescriptions(Console.Out);
-                Console.WriteLine(additionalInfo);
+                Console.WriteLine(_additionalInfo);
                 return;
             }
             if (domains.Count==0)
             {
                 Console.WriteLine("WinCertes.exe: At least one domain must be specified");
                 options.WriteOptionDescriptions(Console.Out);
-                Console.WriteLine(additionalInfo);
+                Console.WriteLine(_additionalInfo);
                 return;
             }
             domains.Sort();
@@ -118,7 +157,7 @@ namespace WinCertes
                 return;
             }
             // Let's create the path where we will put the PFX files, and the log files
-            InitDirectory();
+            InitWinCertesDirectoryPath();
             // Let's configure the logger
             Utils.ConfigureLogger(_winCertesPath);
 
@@ -141,7 +180,7 @@ namespace WinCertes
             cleanup = _config.WriteAndReadBooleanParameter("cleanup", cleanup);
 
             // Is there an existing certificate that needs to be renewed ?
-            if (!Utils.IsCertificateToBeRenewed(_config, domains) && !revoke) {
+            if (!IsCertificateToBeRenewed(domains) && !revoke) {
                 _logger.Debug("No need to renew certificate");
                 if (periodic)
                 {
@@ -186,10 +225,8 @@ namespace WinCertes
             X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
             if (csp != null) { flags = X509KeyStorageFlags.DefaultKeySet | X509KeyStorageFlags.Exportable; }
             X509Certificate2 certificate = new X509Certificate2(_winCertesPath + "\\" + pfxName, _certesWrapper.pfxPassword, flags);
-            // and we write its expiration date to the WinCertes configuration, into "InvariantCulture" date format
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            _config.WriteStringParameter("certExpDate" + Utils.DomainsToHostId(domains), certificate.GetExpirationDateString());
-            _config.WriteStringParameter("certSerial" + Utils.DomainsToHostId(domains), certificate.GetSerialNumberString());
+            // and we write its information to the WinCertes configuration
+            RegisterCertificateIntoConfiguration(certificate, domains);
 
             // Should we import the certificate into the Windows store ?
             if (csp==null)
@@ -202,6 +239,7 @@ namespace WinCertes
             {
                 Utils.ImportPFXIntoKSP(pfx, csp);
             }
+
             if (bindName != null)
             {
                 Utils.BindCertificateForIISSite(certificate, bindName);

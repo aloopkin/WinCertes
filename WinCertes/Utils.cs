@@ -130,24 +130,6 @@ namespace WinCertes
         }
 
         /// <summary>
-        /// Checks whether the enrolled certificate should be renewed
-        /// </summary>
-        /// <param name="config">WinCertes config</param>
-        /// <returns>true if certificate must be renewed or does not exists, false otherwise</returns>
-        public static bool IsCertificateToBeRenewed(IConfig config, List<string> domains)
-        {
-            string certificateExpirationDate = config.ReadStringParameter("certExpDate" + DomainsToHostId(domains));
-            logger.Debug($"Current certificate expiration date is: {certificateExpirationDate}");
-            if ((certificateExpirationDate == null) || (certificateExpirationDate.Length == 0)) { return true; }
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            DateTime expirationDate = DateTime.Parse(certificateExpirationDate);
-            DateTime futureThresold = DateTime.Now.AddDays(config.ReadIntParameter("renewalDays", 30));
-            logger.Debug($"Expiration Thresold Date after delay: {futureThresold.ToString()}");
-            if (futureThresold > expirationDate) { return true; }
-            return false;
-        }
-
-        /// <summary>
         /// Configures the console logger
         /// </summary>
         public static void ConfigureLogger(string logPath)
