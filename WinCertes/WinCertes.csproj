@@ -106,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CertesWrapper.cs" />
+    <Compile Include="CertificateStorageManager.cs" />
     <Compile Include="Config\RegistryConfig.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeFileValidator.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeWebServerValidator.cs" />

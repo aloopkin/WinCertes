@@ -222,24 +222,23 @@ namespace WinCertes
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(domains[0],_winCertesPath,Utils.DomainsToFriendlyName(domains))).GetAwaiter().GetResult();
             if (pfxName==null) { return; }
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.pfxPassword);
-            X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-            if (csp != null) { flags = X509KeyStorageFlags.DefaultKeySet | X509KeyStorageFlags.Exportable; }
-            X509Certificate2 certificate = new X509Certificate2(_winCertesPath + "\\" + pfxName, _certesWrapper.pfxPassword, flags);
+            CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx);
+            certificateStorageManager.ProcessPFX((csp==null));
             // and we write its information to the WinCertes configuration
-            RegisterCertificateIntoConfiguration(certificate, domains);
+            RegisterCertificateIntoConfiguration(certificateStorageManager.certificate, domains);
 
             // Should we import the certificate into the Windows store ?
             if (csp==null)
             {
-                Utils.ImportCertificateIntoDefaultCSP(certificate);
+                certificateStorageManager.ImportCertificateIntoDefaultCSP();
             } else
             {
-                Utils.ImportPFXIntoKSP(pfx, csp);
+                certificateStorageManager.ImportPFXIntoKSP(csp);
             }
 
             if (bindName != null)
             {
-                Utils.BindCertificateForIISSite(certificate, bindName);
+                Utils.BindCertificateForIISSite(certificateStorageManager.certificate, bindName);
             }
 
             // Is there any PS script to execute ?
