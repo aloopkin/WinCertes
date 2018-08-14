@@ -73,9 +73,6 @@ WinCertes.exe:
   -a, --standalone           should WinCertes create its own WebServer for
                                validation (default=no). WARNING: it will use
                                port 80
-  -c, --cleanup              should WinCertes clean up the generated PFX right
-                               before exiting (default=no when using scriptfile,
-                                yes otherwise).
   -r, --revoke               should WinCertes revoke the certificate identified
                                by its domains (incompatible with other
                                parameters except -d)

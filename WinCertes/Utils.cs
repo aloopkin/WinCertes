@@ -84,7 +84,7 @@ namespace WinCertes
 
                 // and we invoke it
                 var results = pipeline.Invoke();
-                logger.Info($"Executed script {scriptFile} successfully.");
+                logger.Info($"Executed script {scriptFile}.");
                 return true;
             }
             catch (Exception e)

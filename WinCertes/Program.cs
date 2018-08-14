@@ -31,7 +31,7 @@ namespace WinCertes
         /// </summary>
         /// <param name="config">WinCertes config</param>
         /// <returns>true if certificate must be renewed or does not exists, false otherwise</returns>
-        private static bool IsCertificateToBeRenewed(List<string> domains)
+        private static bool IsThereCertificateAndIsItToBeRenewed(List<string> domains)
         {
             string certificateExpirationDate = _config.ReadStringParameter("certExpDate" + Utils.DomainsToHostId(domains));
             _logger.Debug($"Current certificate expiration date is: {certificateExpirationDate}");
@@ -114,7 +114,9 @@ namespace WinCertes
             if (!_certesWrapper.IsAccountRegistered())
             {
                 var regRes = Task.Run(() => _certesWrapper.RegisterNewAccount()).GetAwaiter().GetResult();
-                if (!regRes) { return; }
+                if (!regRes) {
+                    throw new Exception("Could not register ACME service account");
+                }
             }
         }
 
@@ -129,7 +131,6 @@ namespace WinCertes
             string bindName = null;
             string scriptFile = null;
             bool standalone = false;
-            bool cleanup = false;
             bool revoke = false;
             string csp = null;
             // Options that can be used by this application
@@ -143,7 +144,6 @@ namespace WinCertes
                 { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\".", v => bindName = v },
                 { "f|scriptfile=", "PowerShell Script file e.g. \"C:\\Temp\\script.ps1\" to execute upon successful enrollment (default=none)", v => scriptFile = v },
                 { "a|standalone", "should WinCertes create its own WebServer for validation (default=no). WARNING: it will use port 80", v => standalone = (v != null) },
-                { "c|cleanup", "should WinCertes clean up the generated PFX right before exiting (default=no when using scriptfile, yes otherwise).", v => cleanup = (v != null) },
                 { "r|revoke", "should WinCertes revoke the certificate identified by its domains (incompatible with other parameters except -d)", v => revoke = (v != null) },
                 { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => csp = v }
             };
@@ -193,11 +193,9 @@ namespace WinCertes
             bindName = _config.WriteAndReadStringParameter("bindName", bindName);
             // Should we execute some PowerShell ? If yes, let's do some config
             scriptFile = _config.WriteAndReadStringParameter("scriptFile", scriptFile);
-            // Should we clean up the PFX right before exiting
-            cleanup = _config.WriteAndReadBooleanParameter("cleanup", cleanup);
 
             // Is there an existing certificate that needs to be renewed ?
-            if (!IsCertificateToBeRenewed(domains) && !revoke) {
+            if (!IsThereCertificateAndIsItToBeRenewed(domains) && !revoke) {
                 _logger.Debug("No need to renew certificate");
                 if (periodic)
                 {
@@ -249,12 +247,8 @@ namespace WinCertes
                 Utils.CreateScheduledTask(Utils.DomainsToFriendlyName(domains), domains);
             }
 
-            // Should we cleanup the generated PFX ?
-            if (cleanup || (scriptFile == null))
-            {
-                File.Delete(pfx.PfxFullPath);
-                _logger.Info($"Removed PFX from filesystem: {pfxName}");
-            }
+            File.Delete(pfx.PfxFullPath);
+            _logger.Info($"Removed PFX from filesystem: {pfxName}");
         }
     }
 }
