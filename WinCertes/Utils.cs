@@ -268,8 +268,22 @@ namespace WinCertes
             }
         }
 
+        public static void ImportCertificateIntoDefaultCSP(X509Certificate2 certificate)
+        {
+            try
+            {
+                X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.ReadWrite);
+                store.Add(certificate);
+                store.Close();
+            } catch (Exception e)
+            {
+                logger.Error($"Impossible to import certificate into Default CSP: {e.Message}");
+            }
+        }
+
         /// <summary>
-        /// Imports PFX into specified KSP
+        /// Imports PFX into specified CSP/KSP
         /// </summary>
         /// <param name="pfxFullPath"></param>
         /// <param name="pfxPassword"></param>

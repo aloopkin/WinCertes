@@ -231,10 +231,7 @@ namespace WinCertes
             // Should we import the certificate into the Windows store ?
             if (csp==null)
             {
-                X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.ReadWrite);
-                store.Add(certificate);
-                store.Close();
+                Utils.ImportCertificateIntoDefaultCSP(certificate);
             } else
             {
                 Utils.ImportPFXIntoKSP(pfx, csp);
