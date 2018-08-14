@@ -128,21 +128,16 @@ namespace WinCertes
         /// <summary>
         /// Configures the console logger
         /// </summary>
+        /// <param name="logPath">the path to the directory where to store the log files</param>
         public static void ConfigureLogger(string logPath)
         {
 
             var config = new LoggingConfiguration();
 
 #if DEBUG
-            config.LoggingRules.Add(
-                new LoggingRule("*", LogLevel.Debug, new ColoredConsoleTarget {
-                    Layout = "[DEBUG] ${message}${onexception:${newline}${exception:format=tostring}}",
-                }));
+            config.LoggingRules.Add(new LoggingRule("*", LogLevel.Debug, new ColoredConsoleTarget { Layout = "[DEBUG] ${message}${onexception:${newline}${exception:format=tostring}}" }));
 #endif
-            config.LoggingRules.Add(
-                new LoggingRule("*", LogLevel.Info, new ColoredConsoleTarget {
-                    Layout = "${message}",
-                }));
+            config.LoggingRules.Add(new LoggingRule("*", LogLevel.Info, new ColoredConsoleTarget { Layout = "${message}" }));
 
             config.LoggingRules.Add(
                 new LoggingRule("*", LogLevel.Info, new FileTarget {

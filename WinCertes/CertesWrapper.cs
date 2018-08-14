@@ -93,7 +93,6 @@ namespace WinCertes
                 Certes.Acme.Resource.Directory directory = await _acme.GetDirectory();
                 InitCertes();
                 IAccountContext accountCtx = await _acme.NewAccount(_settings.AccountEmail, true);
-                logger.Debug($"Registered account: {accountCtx.Location.ToString()}");
                 _config.WriteIntParameter("registered", 1);
                 logger.Info($"Successfully registered account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}");
                 if (directory.Meta.TermsOfService != null) logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
@@ -262,9 +261,7 @@ namespace WinCertes
         /// <returns>true in case of success, false otherwise</returns>
         public async Task<bool> RevokeCertificate(X509Certificate2 certificate)
         {
-            if (certificate == null) {
-                return false;
-            }
+            if (certificate == null) return false;
             try {
                 InitCertes();
 
