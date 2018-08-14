@@ -2,7 +2,7 @@
 
 WinCertes is a simple ACMEv2 Client for Windows, able to manage the automatic issuance and renewal of SSL Certificates, for IIS or other web servers. It is based on [Certes](https://github.com/fszlin/certes) Library
 
-![GPLv3 License](https://www.gnu.org/graphics/license-logos-by-christian-candena-cc-by.png)
+![GPLv3 License](https://www.gnu.org/graphics/gplv3-88x31.png)
 
 Requirements:
 - Windows Server 2008 R2 SP1 or higher (.Net 4.6.1 or higher), 64-bit
@@ -102,6 +102,10 @@ By default, WinCertes uses Let's Encrypt (LE) CA to issue SSL certificates. Howe
 
 
 
+
+
 This project is (c) 2018 Alexandre Aufrere
+
 Released under the terms of GPLv3
+
 https://evertrust.fr/
