@@ -101,14 +101,8 @@ namespace WinCertes
             List<string> res;
             try {
                 res = options.Parse(args);
-            } catch (Exception e) {
-                WriteErrorMessageWithUsage(options, e.Message);
-                return false;
-            }
-            if (_domains.Count == 0) {
-                WriteErrorMessageWithUsage(options, "At least one domain must be specified");
-                return false;
-            }
+            } catch (Exception e) { WriteErrorMessageWithUsage(options, e.Message); return false; }
+            if (_domains.Count == 0) { WriteErrorMessageWithUsage(options, "At least one domain must be specified"); return false; }
             _domains.Sort();
             return true;
         }
@@ -234,7 +228,7 @@ namespace WinCertes
             // Main parameters with their default values
             string taskName = null;
             _winCertesOptions = new WinCertesOptions();
- 
+
             // Command line options handling and initialization stuff
             if (!HandleOptions(args)) return;
             if (_periodic) taskName = Utils.DomainsToFriendlyName(_domains);
