@@ -145,8 +145,7 @@ namespace WinCertes
                 var orderAuthz = await _orderCtx.Authorizations();
 
                 // Looping through authorizations
-                foreach (IAuthorizationContext authz in orderAuthz)
-                {
+                foreach (IAuthorizationContext authz in orderAuthz) {
                     InitCertes();
                     // For each authorization, get the challenges
                     var allChallenges = await authz.Challenges();
@@ -154,16 +153,14 @@ namespace WinCertes
                     var res = await authz.Resource();
                     // Get the HTTP challenge
                     var httpChallenge = await authz.Http();
-                    if (httpChallenge != null)
-                    {
+                    if (httpChallenge != null) {
                         // We get the resource fresh
                         var httpChallengeStatus = await httpChallenge.Resource();
 
                         logger.Debug($"Got http-01 challenge {httpChallengeStatus.Url}");
 
                         // If it's invalid, we stop right away
-                        if (httpChallengeStatus.Status == ChallengeStatus.Invalid)
-                        {
+                        if (httpChallengeStatus.Status == ChallengeStatus.Invalid) {
                             throw new Exception("HTTP challenge has an invalid status");
                         }
 
@@ -177,9 +174,7 @@ namespace WinCertes
 
                         // We need to loop, because ACME service might need some time to validate the challenge token
                         int retry = 0;
-                        while (((challengeRes.Status==ChallengeStatus.Pending)||(challengeRes.Status==ChallengeStatus.Processing))
-                                &&(retry<10))
-                        {
+                        while (((challengeRes.Status==ChallengeStatus.Pending)||(challengeRes.Status==ChallengeStatus.Processing)) && (retry<10)) {
                             // We refresh the challenge object from ACME service
                             challengeRes = await httpChallenge.Resource();
                             // That's why we sleep 2 seconds between each request
@@ -191,21 +186,17 @@ namespace WinCertes
                         challengeValidator.CleanupChallengeAfterValidation(httpChallenge.Token);
 
                         // If challenge is Invalid, Pending or Processing, something went wrong...
-                        if (challengeRes.Status!=ChallengeStatus.Valid)
-                        {
+                        if (challengeRes.Status!=ChallengeStatus.Valid) {
                             throw new Exception($"Could not validate challenge {httpChallenge.Location.ToString()}");
                         }
-                    } else
-                    {
+                    } else {
                         throw new Exception("Only HTTP challenges are supported for now");
                     }
                 }
                 // If we are here, it means order was properly created, and authorizations & challenges were properly verified.
                 logger.Info($"Generated orders and validated challenges for domains: {String.Join(",",domains)}");
                 return true;
-            }
-            catch (Exception exp)
-            {
+            } catch (Exception exp) {
                 logger.Error($"Failed to register and validate order with CA: {exp.Message}");
                 return false;
             }
