@@ -83,13 +83,11 @@ namespace WinCertes
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.CreateNoWindow = true;
-                logger.Debug(process.StartInfo.Arguments);
                 process.Start();
                 string output = "";
                 while (!process.StandardOutput.EndOfStream)
                 {
-                    output += process.StandardOutput.ReadLine();
-                    output += "\n";
+                    output += process.StandardOutput.ReadLine() + "\n";
                 }
                 process.WaitForExit();
                 logger.Debug(output);
