@@ -209,12 +209,15 @@ namespace WinCertes
             }
         }
 
+        private static void RemoveFileAndLog(string path)
+        {
+            File.Delete(path);
+            _logger.Info($"Removed file from filesystem: {path}");
+        }
+
         static void Main(string[] args)
         {
-            if (!Utils.IsAdministrator()) {
-                Console.WriteLine("WinCertes.exe must be launched as Administrator");
-                return;
-            }
+            if (!Utils.IsAdministrator()) { Console.WriteLine("WinCertes.exe must be launched as Administrator"); return; }
 
             // Main parameters with their default values
             string taskName = null;
@@ -222,14 +225,12 @@ namespace WinCertes
             _domains = new List<string>();
             _periodic = false;
 
+            // Command line options handling and initialization stuff
             if (!HandleOptions(args)) { return; }
-
             InitWinCertesDirectoryPath();
             Utils.ConfigureLogger(_winCertesPath);
-
             _config = new RegistryConfig();
             _winCertesOptions.WriteOptionsIntoConfiguration(_config);
-
 
             try {
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
@@ -261,15 +262,16 @@ namespace WinCertes
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains[0],_winCertesPath,Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
             if (pfxName==null) { return; }
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
-            CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx);
-            certificateStorageManager.ProcessPFX((_winCertesOptions.Csp == null));
+            CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, (_winCertesOptions.Csp == null));
+            // Let's process the PFX into Windows Certificate objet.
+            certificateStorageManager.ProcessPFX();
             // and we write its information to the WinCertes configuration
-            RegisterCertificateIntoConfiguration(certificateStorageManager.certificate, _domains);
+            RegisterCertificateIntoConfiguration(certificateStorageManager.Certificate, _domains);
             // Import the certificate into the Windows store
             certificateStorageManager.ImportCertificateIntoCSP(_winCertesOptions.Csp);
 
             // Bind certificate to IIS Site (won't do anything if option is null)
-            Utils.BindCertificateForIISSite(certificateStorageManager.certificate, _winCertesOptions.BindName);
+            Utils.BindCertificateForIISSite(certificateStorageManager.Certificate, _winCertesOptions.BindName);
 
             // Execute PowerShell Script (won't do anything if option is null)
             Utils.ExecutePowerShell(_winCertesOptions.ScriptFile, pfx);
@@ -277,8 +279,8 @@ namespace WinCertes
             // Create the AT task that will execute WinCertes periodically (won't do anything if taskName is null)
             Utils.CreateScheduledTask(taskName, _domains);
  
-            File.Delete(pfx.PfxFullPath);
-            _logger.Info($"Removed PFX from filesystem: {pfxName}");
+            // Let's delete the PFX file
+            RemoveFileAndLog(pfx.PfxFullPath);
         }
     }
 }

@@ -157,28 +157,22 @@ namespace WinCertes
                         // We get the resource fresh
                         var httpChallengeStatus = await httpChallenge.Resource();
 
-                        logger.Debug($"Got http-01 challenge {httpChallengeStatus.Url}");
-
-                        // If it's invalid, we stop right away
-                        if (httpChallengeStatus.Status == ChallengeStatus.Invalid) {
-                            throw new Exception("HTTP challenge has an invalid status");
-                        }
+                        // If it's invalid, we stop right away. Should not happen, but anyway...
+                        if (httpChallengeStatus.Status == ChallengeStatus.Invalid) { throw new Exception("HTTP challenge has an invalid status"); }
 
                         // Else we start the challenge validation
                         challengeValidator.PrepareChallengeForValidation(httpChallenge.Token, httpChallenge.KeyAuthz);
-                        // We wait a bit to be sure that the token is ready for challenge validation
-                        System.Threading.Thread.Sleep(500);
 
-                        // Now let's poing the ACME service to validate the challenge token
+                        // Now let's ping the ACME service to validate the challenge token
                         Challenge challengeRes = await httpChallenge.Validate();
 
                         // We need to loop, because ACME service might need some time to validate the challenge token
                         int retry = 0;
                         while (((challengeRes.Status==ChallengeStatus.Pending)||(challengeRes.Status==ChallengeStatus.Processing)) && (retry<10)) {
+                            // We sleep 2 seconds between each request, to leave time to ACME service to refresh
+                            System.Threading.Thread.Sleep(2000);
                             // We refresh the challenge object from ACME service
                             challengeRes = await httpChallenge.Resource();
-                            // That's why we sleep 2 seconds between each request
-                            System.Threading.Thread.Sleep(2000);
                             retry++;
                         }
 

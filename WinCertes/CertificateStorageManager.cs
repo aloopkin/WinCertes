@@ -13,30 +13,34 @@ namespace WinCertes
     {
         private static readonly ILogger logger = LogManager.GetLogger("WinCertes.CertificateStorageManager");
 
-        public AuthenticatedPFX authenticatedPFX { get; set; }
-        public X509Certificate2 certificate { get; set; }
+        public AuthenticatedPFX AuthenticatedPFX { get; set; }
+        public X509Certificate2 Certificate { get; set; }
+        private bool DefaultCSP { get; set; }
 
         /// <summary>
         /// Class constructor
         /// </summary>
-        /// <param name="authenticatedPFX"></param>
-        public CertificateStorageManager(AuthenticatedPFX authenticatedPFX)
+        /// <param name="authenticatedPFX">the PFX that we will store</param>
+        /// <param name="defaultCSP">do we use the default CSP to store the certificate?</param>
+        public CertificateStorageManager(AuthenticatedPFX authenticatedPFX, bool defaultCSP)
         {
-            this.authenticatedPFX = authenticatedPFX;
-            certificate = null;
+            AuthenticatedPFX = authenticatedPFX;
+            Certificate = null;
+            DefaultCSP = defaultCSP;
         }
 
         /// <summary>
         /// Process PFX to extract its certificate/key into Windows objects
         /// </summary>
-        /// <param name="persist">should the extracted key/cert be persisted?</param>
-       public void ProcessPFX(bool persist)
+       public void ProcessPFX()
         {
             try
             {
+                // If we use the default CSP, then the key should be persisted as local machine while we parse the certificate
                 X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (!persist) { flags = X509KeyStorageFlags.DefaultKeySet | X509KeyStorageFlags.Exportable; }
-                certificate = new X509Certificate2(authenticatedPFX.PfxFullPath, authenticatedPFX.PfxPassword, flags);
+                // else it should be left non-persistent so that it can disappear after treatment
+                if (!DefaultCSP) { flags = X509KeyStorageFlags.DefaultKeySet | X509KeyStorageFlags.Exportable; }
+                Certificate = new X509Certificate2(AuthenticatedPFX.PfxFullPath, AuthenticatedPFX.PfxPassword, flags);
             }
             catch (Exception e)
             {
@@ -49,7 +53,7 @@ namespace WinCertes
         /// </summary>
         public void ImportCertificateIntoDefaultCSP()
         {
-            if (certificate == null)
+            if (Certificate == null)
             {
                 logger.Error("No certificate to import.");
                 return;
@@ -58,7 +62,7 @@ namespace WinCertes
             {
                 X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.ReadWrite);
-                store.Add(certificate);
+                store.Add(Certificate);
                 store.Close();
             }
             catch (Exception e)
@@ -79,7 +83,7 @@ namespace WinCertes
             {
                 Process process = new Process();
                 process.StartInfo.FileName = @"c:\Windows\System32\certutil.exe";
-                process.StartInfo.Arguments = $"-importPFX -p {authenticatedPFX.PfxPassword} -csp \"{KSP}\" -f My \"{authenticatedPFX.PfxFullPath}\"";
+                process.StartInfo.Arguments = $"-importPFX -p {AuthenticatedPFX.PfxPassword} -csp \"{KSP}\" -f My \"{AuthenticatedPFX.PfxFullPath}\"";
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.CreateNoWindow = true;
