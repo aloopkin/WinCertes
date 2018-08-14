@@ -148,7 +148,7 @@ namespace WinCertes
                         var httpChallengeStatus = await httpChallenge.Resource();
 
                         // If it's invalid, we stop right away. Should not happen, but anyway...
-                        if (httpChallengeStatus.Status == ChallengeStatus.Invalid) { throw new Exception("HTTP challenge has an invalid status"); }
+                        if (httpChallengeStatus.Status == ChallengeStatus.Invalid) throw new Exception("HTTP challenge has an invalid status");
 
                         // Else we start the challenge validation
                         challengeValidator.PrepareChallengeForValidation(httpChallenge.Token, httpChallenge.KeyAuthz);

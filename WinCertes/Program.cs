@@ -136,12 +136,13 @@ namespace WinCertes
         {
             string certificateExpirationDate = _config.ReadStringParameter("certExpDate" + Utils.DomainsToHostId(domains));
             _logger.Debug($"Current certificate expiration date is: {certificateExpirationDate}");
-            if ((certificateExpirationDate == null) || (certificateExpirationDate.Length == 0)) { return true; }
+            if ((certificateExpirationDate == null) || (certificateExpirationDate.Length == 0)) return true;
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             DateTime expirationDate = DateTime.Parse(certificateExpirationDate);
             DateTime futureThresold = DateTime.Now.AddDays(_config.ReadIntParameter("renewalDays", 30));
             _logger.Debug($"Expiration Thresold Date after delay: {futureThresold.ToString()}");
-            if (futureThresold > expirationDate) { return true; }
+            if (futureThresold > expirationDate) return true;
+            _logger.Debug("Certificate exists and does not need to be renewed");
             return false;
         }
 
@@ -210,9 +211,8 @@ namespace WinCertes
             // If local computer's account isn't registered on the ACME service, we'll do it.
             if (!_certesWrapper.IsAccountRegistered()) {
                 var regRes = Task.Run(() => _certesWrapper.RegisterNewAccount()).GetAwaiter().GetResult();
-                if (!regRes) {
+                if (!regRes)
                     throw new Exception("Could not register ACME service account");
-                }
             }
         }
 
@@ -233,8 +233,8 @@ namespace WinCertes
             _periodic = false;
 
             // Command line options handling and initialization stuff
-            if (!HandleOptions(args)) { return; }
-            if (_periodic) { taskName = Utils.DomainsToFriendlyName(_domains); }
+            if (!HandleOptions(args)) return;
+            if (_periodic) taskName = Utils.DomainsToFriendlyName(_domains);
             InitWinCertesDirectoryPath();
             Utils.ConfigureLogger(_winCertesPath);
             _config = new RegistryConfig();
@@ -245,11 +245,7 @@ namespace WinCertes
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
             } catch (Exception e) { _logger.Error(e.Message); return; }
             if (_winCertesOptions.Revoke) { RevokeCert(_domains); return; }
-            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) {
-                _logger.Debug("Certificate exists and does not need to be renewed");
-                Utils.CreateScheduledTask(taskName, _domains);
-                return;
-            }
+            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return; }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
             IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
@@ -258,7 +254,7 @@ namespace WinCertes
 
             // We get the certificate from the ACME service
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains[0], _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
-            if (pfxName == null) { return; }
+            if (pfxName == null) return;
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, (_winCertesOptions.Csp == null));
             // Let's process the PFX into Windows Certificate objet.
