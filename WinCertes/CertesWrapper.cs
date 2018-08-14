@@ -29,7 +29,7 @@ namespace WinCertes
     {
         public string pfxPassword { get; set; }
         private static readonly ILogger logger = LogManager.GetLogger("CertesWrapper");
-        private Config _config;
+        private IConfig _config;
         private CertesSettings _settings;
         private AcmeContext _acme;
         private IOrderContext _orderCtx = null;
@@ -50,7 +50,7 @@ namespace WinCertes
         public CertesWrapper(string serviceUri=null, string accountEmail=null)
         {
             _settings = new CertesSettings();
-            _config = new Config();
+            _config = new RegistryConfig();
 
             // Let's initialize the password
             pfxPassword = Guid.NewGuid().ToString("N").Substring(0,16);

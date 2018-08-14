@@ -16,8 +16,8 @@ namespace WinCertes
         private static readonly ILogger _logger = LogManager.GetLogger("WinCertes");
 
         private static CertesWrapper _certesWrapper;
-
-        private static Config _config;
+        private static IConfig _config;
+        private static string _winCertesPath;
 
         private static void RevokeCert(List<string> domains)
         {
@@ -45,6 +45,16 @@ namespace WinCertes
                 _logger.Info($"Certificate with serial {serial} for domains {String.Join(",", domains)} has been successfully revoked");
             }
         }
+
+        private static void InitDirectory()
+        {
+            _winCertesPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + "\\WinCertes";
+            if (!System.IO.Directory.Exists(_winCertesPath))
+            {
+                System.IO.Directory.CreateDirectory(_winCertesPath);
+            }
+        }
+
         static void Main(string[] args)
         {
             // Main parameters with their default values
@@ -108,15 +118,11 @@ namespace WinCertes
                 return;
             }
             // Let's create the path where we will put the PFX files, and the log files
-            string pfxPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + "\\WinCertes";
-            if (!System.IO.Directory.Exists(pfxPath))
-            {
-                System.IO.Directory.CreateDirectory(pfxPath);
-            }
+            InitDirectory();
             // Let's configure the logger
-            Utils.ConfigureLogger(pfxPath);
+            Utils.ConfigureLogger(_winCertesPath);
 
-            _config = new Config();
+            _config = new RegistryConfig();
             // Should we work with the built-in web server
             standalone = _config.WriteAndReadBooleanParameter("standalone", standalone);
             // do we have a webroot parameter to handle?
@@ -174,12 +180,12 @@ namespace WinCertes
             challengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
-            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(domains[0],pfxPath,Utils.DomainsToFriendlyName(domains))).GetAwaiter().GetResult();
+            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(domains[0],_winCertesPath,Utils.DomainsToFriendlyName(domains))).GetAwaiter().GetResult();
             if (pfxName==null) { return; }
-            AuthenticatedPFX pfx = new AuthenticatedPFX(pfxPath + "\\" + pfxName, _certesWrapper.pfxPassword);
+            AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.pfxPassword);
             X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
             if (csp != null) { flags = X509KeyStorageFlags.DefaultKeySet | X509KeyStorageFlags.Exportable; }
-            X509Certificate2 certificate = new X509Certificate2(pfxPath + "\\" + pfxName, _certesWrapper.pfxPassword, flags);
+            X509Certificate2 certificate = new X509Certificate2(_winCertesPath + "\\" + pfxName, _certesWrapper.pfxPassword, flags);
             // and we write its expiration date to the WinCertes configuration, into "InvariantCulture" date format
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             _config.WriteStringParameter("certExpDate" + Utils.DomainsToHostId(domains), certificate.GetExpirationDateString());

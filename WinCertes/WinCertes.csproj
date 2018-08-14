@@ -106,10 +106,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CertesWrapper.cs" />
-    <Compile Include="Config.cs" />
+    <Compile Include="Config\RegistryConfig.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeFileValidator.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeWebServerValidator.cs" />
     <Compile Include="ChallengeValidator\IHTTPChallengeValidator.cs" />
+    <Compile Include="Config\IConfig.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils.cs" />

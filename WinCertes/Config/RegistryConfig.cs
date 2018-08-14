@@ -3,16 +3,16 @@
 namespace WinCertes
 {
     /// <summary>
-    /// Configuration class, managing WinCertes configuration into Registry
+    /// Configuration class, managing WinCertes configuration into Windows Registry
     /// </summary>
-    class Config
+    class RegistryConfig : IConfig
     {
         private static string _registryKey = @"HKEY_LOCAL_MACHINE\SOFTWARE\WinCertes";
 
         /// <summary>
         /// Class constructor
         /// </summary>
-        public Config()
+        public RegistryConfig()
         {
             if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null)
             {
@@ -72,11 +72,22 @@ namespace WinCertes
             return ReadStringParameter(parameter);
         }
 
+        /// <summary>
+        /// Reads Integer parameter from the configuration
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
         public int ReadIntParameter(string parameter, int defaultValue=0)
         {
             return (int)Registry.GetValue(_registryKey, parameter, defaultValue);
         }
 
+        /// <summary>
+        /// Writes integer parameter into configuration
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <param name="value"></param>
         public void WriteIntParameter(string parameter, int value)
         {
             if (parameter == null) { return; }

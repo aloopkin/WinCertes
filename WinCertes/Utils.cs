@@ -134,7 +134,7 @@ namespace WinCertes
         /// </summary>
         /// <param name="config">WinCertes config</param>
         /// <returns>true if certificate must be renewed or does not exists, false otherwise</returns>
-        public static bool IsCertificateToBeRenewed(Config config, List<string> domains)
+        public static bool IsCertificateToBeRenewed(IConfig config, List<string> domains)
         {
             string certificateExpirationDate = config.ReadStringParameter("certExpDate" + DomainsToHostId(domains));
             logger.Debug($"Current certificate expiration date is: {certificateExpirationDate}");
