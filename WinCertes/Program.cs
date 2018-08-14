@@ -73,12 +73,6 @@ namespace WinCertes
         private static List<string> _domains;
         private static bool _periodic;
 
-        private readonly static string _exampleUsage = "\nTypical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
-            + "This will automatically create and register account with email me@example.com, and\n"
-            + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
-            + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
-            + "\"WinCertes.exe -d test1.example.com -d test2.example.com -r\" will revoke that certificate.";
-
         /// <summary>
         /// Handles command line options
         /// </summary>
@@ -105,19 +99,32 @@ namespace WinCertes
             try {
                 res = options.Parse(args);
             } catch (Exception e) {
-                Console.WriteLine("WinCertes.exe: " + e.Message);
-                options.WriteOptionDescriptions(Console.Out);
-                Console.WriteLine(_exampleUsage);
+                WriteErrorMessageWithUsage(options, e.Message);
                 return false;
             }
             if (_domains.Count == 0) {
-                Console.WriteLine("WinCertes.exe: At least one domain must be specified");
-                options.WriteOptionDescriptions(Console.Out);
-                Console.WriteLine(_exampleUsage);
+                WriteErrorMessageWithUsage(options, "At least one domain must be specified");
                 return false;
             }
             _domains.Sort();
             return true;
+        }
+
+        /// <summary>
+        /// Writes the error message when handling options
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="message"></param>
+        private static void WriteErrorMessageWithUsage(OptionSet options, string message)
+        {
+            string exampleUsage = "\nTypical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
+                + "This will automatically create and register account with email me@example.com, and\n"
+                + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
+                + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
+                + "\"WinCertes.exe -d test1.example.com -d test2.example.com -r\" will revoke that certificate.";
+            Console.WriteLine("WinCertes.exe:" + message);
+            options.WriteOptionDescriptions(Console.Out);
+            Console.WriteLine(exampleUsage);
         }
 
         /// <summary>
