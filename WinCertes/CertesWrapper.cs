@@ -204,7 +204,6 @@ namespace WinCertes
             var chain = "";
             X509Certificate2Collection certsW = store.Certificates.Find(X509FindType.FindByKeyUsage, X509KeyUsageFlags.KeyCertSign, true);
 
-            logger.Debug($"Found {certsW.Count} certificate(s) in store.");
             foreach (X509Certificate2 certW in certsW) {
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("-----BEGIN CERTIFICATE-----");

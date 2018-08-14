@@ -62,9 +62,7 @@ namespace WinCertes
         /// <returns></returns>
         public static bool ExecutePowerShell(string scriptFile, AuthenticatedPFX pfx)
         {
-            if (scriptFile == null) {
-                return false;
-            }
+            if (scriptFile == null) return false;
             try {
                 // First let's create the execution runspace
                 RunspaceConfiguration runspaceConfiguration = RunspaceConfiguration.Create();
@@ -102,9 +100,7 @@ namespace WinCertes
         /// <returns>true in case of success, false otherwise</returns>
         public static bool BindCertificateForIISSite(X509Certificate2 certificate, string siteName)
         {
-            if (siteName == null) {
-                return false;
-            }
+            if (siteName == null) return false;
             try {
                 ServerManager mgr = new ServerManager();
                 Site site = mgr.Sites[siteName];
@@ -168,9 +164,7 @@ namespace WinCertes
         /// <param name="taskName"></param>
         public static void CreateScheduledTask(string taskName, List<string> domains)
         {
-            if (taskName == null) {
-                return;
-            }
+            if (taskName == null) return;
             try {
                 using (TS.TaskService ts = new TS.TaskService()) {
                     // Create a new task definition and assign properties
