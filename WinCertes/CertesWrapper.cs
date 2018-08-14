@@ -201,7 +201,6 @@ namespace WinCertes
         {
             X509Store store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
             store.Open(OpenFlags.ReadOnly);
-
             var chain = "";
             X509Certificate2Collection certsW = store.Certificates.Find(X509FindType.FindByKeyUsage, X509KeyUsageFlags.KeyCertSign, true);
 
@@ -227,25 +226,18 @@ namespace WinCertes
         public async Task<string> RetrieveCertificate(string commonName, string pathForPfx, string pfxFriendlyName)
         {
             try {
-                if (_orderCtx == null) {
-                    throw new Exception("Do not call RetrieveCertificate before RegisterNewOrderAndVerify");
-                }
-                if (!System.IO.Directory.Exists(pathForPfx)) {
-                    throw new Exception("Directory for PFX writing do not exists");
-                }
+                if (_orderCtx == null) throw new Exception("Do not call RetrieveCertificate before RegisterNewOrderAndVerify");
+                if (!System.IO.Directory.Exists(pathForPfx)) throw new Exception("Directory for PFX writing do not exists");
 
                 InitCertes();
-
                 // Let's generate a new key (RSA is good enough IMHO)
                 IKey certKey = KeyFactory.NewKey(KeyAlgorithm.RS256);
-
                 // Then let's generate the CSR
                 var csr = await _orderCtx.CreateCsr(certKey);
                 csr.AddName("CN", commonName);
 
                 // and finalize the ACME order
                 var finalOrder = await _orderCtx.Finalize(csr.Generate());
-
                 // Now we can fetch the certificate
                 CertificateChain cert = await _orderCtx.Download();
 
@@ -257,7 +249,6 @@ namespace WinCertes
 
                 // We write the PFX/PKCS#12 to file
                 System.IO.File.WriteAllBytes(pathForPfx + "\\" + pfxName, pfxBytes);
-
                 logger.Info($"Retrieved certificate from the CA. The certificate is in {pfxName}");
 
                 return pfxName;
