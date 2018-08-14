@@ -111,8 +111,8 @@ namespace WinCertes
         /// This method manages automatically the creation of necessary directory and files.
         /// </summary>
         /// <remarks>
-        /// The ACME directory will access to http://__domain__/.well-known/acme-challenge/token, that should be served by a local web server,
-        /// and translated into local path {challengeVerifyPath}\.well-known\acme-challenge\token.
+        /// The ACME directory will access to http://__domain__/.well-known/acme-challenge/token, that should be served by a local web server
+        /// when not using built-in, and translated into local path {challengeVerifyPath}\.well-known\acme-challenge\token.
         /// Important Note: currently WinCertes supports only http-01 validation mode.
         /// </remarks>
         /// <param name="domains">The list of domains to be registered and validated</param>
@@ -126,10 +126,7 @@ namespace WinCertes
 
                 // Creating the order
                 _orderCtx = await _acme.NewOrder(domains);
-
                 if (_orderCtx == null) throw new Exception("Could not create certificate order.");
-
-                string orderUri = _orderCtx.Location.ToString();
 
                 // And fetching authorizations
                 var orderAuthz = await _orderCtx.Authorizations();

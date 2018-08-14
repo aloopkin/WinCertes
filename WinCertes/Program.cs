@@ -80,6 +80,8 @@ namespace WinCertes
         /// <returns></returns>
         private static bool HandleOptions(string[] args)
         {
+            if (!Utils.IsAdministrator()) { Console.WriteLine("WinCertes.exe must be launched as Administrator"); return false; }
+
             // Options that can be used by this application
             OptionSet options = new OptionSet() {
                 { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => _winCertesOptions.ServiceUri = v },
@@ -224,8 +226,6 @@ namespace WinCertes
 
         static void Main(string[] args)
         {
-            if (!Utils.IsAdministrator()) { Console.WriteLine("WinCertes.exe must be launched as Administrator"); return; }
-
             // Main parameters with their default values
             string taskName = null;
             _winCertesOptions = new WinCertesOptions();
