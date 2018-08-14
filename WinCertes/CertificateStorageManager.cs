@@ -105,5 +105,21 @@ namespace WinCertes
                 logger.Error($"Impossible to import certificate into KSP {KSP}: {e.Message}");
             }
         }
+
+        /// <summary>
+        /// Imports the certificate into the specified CSP, or into default one if csp parameter is null
+        /// </summary>
+        /// <param name="csp">the name of the csp to import certificate</param>
+        public void ImportCertificateIntoCSP(string csp=null)
+        {
+            if (csp == null)
+            {
+                this.ImportCertificateIntoDefaultCSP();
+            }
+            else
+            {
+                this.ImportPFXIntoKSP(csp);
+            }
+        }
     }
 }

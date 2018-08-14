@@ -206,14 +206,7 @@ namespace WinCertes
             }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
-            IHTTPChallengeValidator challengeValidator = null;
-            if (standalone)
-            {
-                challengeValidator = new HTTPChallengeWebServerValidator();
-            } else
-            {
-                challengeValidator = new HTTPChallengeFileValidator(webRoot);
-            }
+            IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(standalone, webRoot);
             var result = Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(domains, challengeValidator)).GetAwaiter().GetResult();
             if (!result) { return; }
             challengeValidator.EndAllChallengeValidations();
@@ -226,15 +219,8 @@ namespace WinCertes
             certificateStorageManager.ProcessPFX((csp==null));
             // and we write its information to the WinCertes configuration
             RegisterCertificateIntoConfiguration(certificateStorageManager.certificate, domains);
-
-            // Should we import the certificate into the Windows store ?
-            if (csp==null)
-            {
-                certificateStorageManager.ImportCertificateIntoDefaultCSP();
-            } else
-            {
-                certificateStorageManager.ImportPFXIntoKSP(csp);
-            }
+            // Import the certificate into the Windows store
+            certificateStorageManager.ImportCertificateIntoCSP(csp);
 
             if (bindName != null)
             {
