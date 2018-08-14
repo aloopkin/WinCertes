@@ -11,6 +11,9 @@ using System.IO;
 
 namespace WinCertes
 {
+    /// <summary>
+    /// Class to handle the command line parameters given to WinCertes
+    /// </summary>
     class WinCertesOptions
     {
         public WinCertesOptions()
@@ -33,6 +36,10 @@ namespace WinCertes
         public bool Revoke { get; set; }
         public string Csp { get; set; }
 
+        /// <summary>
+        /// Writes command line parameters into the specified config
+        /// </summary>
+        /// <param name="config">the configuration object</param>
         public void WriteOptionsIntoConfiguration(IConfig config)
         {
             // write service URI into conf, or reads from it, if any
@@ -67,6 +74,13 @@ namespace WinCertes
         private static List<string> _domains;
         private static bool _periodic;
 
+        private readonly static string _exampleUsage = "Typical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
+            + "This will automatically create and register account with email me@example.com, and\n"
+            + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
+            + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
+            + "\"WinCertes.exe -d test1.example.com -d test2.example.com -r\" will revoke that certificate.";
+
+
         private static bool HandleOptions(string[] args)
         {
             // Options that can be used by this application
@@ -74,22 +88,15 @@ namespace WinCertes
             {
                 { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => _winCertesOptions.ServiceUri = v },
                 { "e|email=", "the account email to be used for ACME requests (optional, defaults to no email)", v => _winCertesOptions.Email = v },
-                { "d|domain=", "the domain(s) to enroll (mandatory) *", v => _domains.Add(v) },
+                { "d|domain=", "the domain(s) to enroll (mandatory)", v => _domains.Add(v) },
                 { "w|webroot=", "the web server root directory (optional, defaults to c:\\inetpub\\wwwroot)", v => _winCertesOptions.WebRoot = v },
-                { "p|periodic", "should WinCertes create the Windows Scheduler task to handle certificate renewal (default=no) *", v => _periodic = (v != null) },
+                { "p|periodic", "should WinCertes create the Windows Scheduler task to handle certificate renewal (default=no)", v => _periodic = (v != null) },
                 { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\".", v => _winCertesOptions.BindName = v },
                 { "f|scriptfile=", "PowerShell Script file e.g. \"C:\\Temp\\script.ps1\" to execute upon successful enrollment (default=none)", v => _winCertesOptions.ScriptFile = v },
                 { "a|standalone", "should WinCertes create its own WebServer for validation (default=no). WARNING: it will use port 80", v => _winCertesOptions.Standalone = (v != null) },
                 { "r|revoke", "should WinCertes revoke the certificate identified by its domains (incompatible with other parameters except -d)", v => _winCertesOptions.Revoke = (v != null) },
                 { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v }
             };
-
-            string _additionalInfo = "\n*: these paremeters are not stored into configuration.\n\n"
-            + "Typical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
-            + "This will automatically create and register account with email me@example.com, and\n"
-            + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
-            + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
-            + "\"WinCertes.exe -d test1.example.com -d test2.example.com -r\" will revoke that certificate.";
 
             // and the handling of these options
             List<string> res;
@@ -98,13 +105,13 @@ namespace WinCertes
             } catch (Exception e) {
                 Console.WriteLine("WinCertes.exe: " + e.Message);
                 options.WriteOptionDescriptions(Console.Out);
-                Console.WriteLine(_additionalInfo);
+                Console.WriteLine(_exampleUsage);
                 return false;
             }
             if (_domains.Count == 0) {
                 Console.WriteLine("WinCertes.exe: At least one domain must be specified");
                 options.WriteOptionDescriptions(Console.Out);
-                Console.WriteLine(_additionalInfo);
+                Console.WriteLine(_exampleUsage);
                 return false;
             }
             _domains.Sort();
