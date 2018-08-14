@@ -93,19 +93,15 @@ namespace WinCertes
 
             // and the handling of these options
             List<string> res;
-            try
-            {
+            try {
                 res = options.Parse(args);
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 Console.WriteLine("WinCertes.exe: " + e.Message);
                 options.WriteOptionDescriptions(Console.Out);
                 Console.WriteLine(_additionalInfo);
                 return false;
             }
-            if (_domains.Count == 0)
-            {
+            if (_domains.Count == 0) {
                 Console.WriteLine("WinCertes.exe: At least one domain must be specified");
                 options.WriteOptionDescriptions(Console.Out);
                 Console.WriteLine(_additionalInfo);
@@ -227,25 +223,17 @@ namespace WinCertes
 
             // Command line options handling and initialization stuff
             if (!HandleOptions(args)) { return; }
+            if (_periodic) { taskName = Utils.DomainsToFriendlyName(_domains); }
             InitWinCertesDirectoryPath();
             Utils.ConfigureLogger(_winCertesPath);
             _config = new RegistryConfig();
             _winCertesOptions.WriteOptionsIntoConfiguration(_config);
 
+            // Initialization and renewal/revocation handling
             try {
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
-            } catch (Exception e) {
-                _logger.Error(e.Message);
-                return;
-            }
-
-            if (_winCertesOptions.Revoke) {
-                RevokeCert(_domains);
-                return;
-            }
-
-            if (_periodic) { taskName = Utils.DomainsToFriendlyName(_domains); }
-
+            } catch (Exception e) { _logger.Error(e.Message); return; }
+            if (_winCertesOptions.Revoke) { RevokeCert(_domains); return; }
             if (!IsThereCertificateAndIsItToBeRenewed(_domains)) {
                 _logger.Debug("Certificate exists and does not need to be renewed");
                 Utils.CreateScheduledTask(taskName, _domains);
@@ -254,13 +242,12 @@ namespace WinCertes
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
             IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
-            var result = Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, challengeValidator)).GetAwaiter().GetResult();
-            if (!result) { return; }
+            if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, challengeValidator)).GetAwaiter().GetResult())) { challengeValidator.EndAllChallengeValidations(); return; }
             challengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains[0],_winCertesPath,Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
-            if (pfxName==null) { return; }
+            if (pfxName == null) { return; }
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, (_winCertesOptions.Csp == null));
             // Let's process the PFX into Windows Certificate objet.
@@ -272,10 +259,8 @@ namespace WinCertes
 
             // Bind certificate to IIS Site (won't do anything if option is null)
             Utils.BindCertificateForIISSite(certificateStorageManager.Certificate, _winCertesOptions.BindName);
-
             // Execute PowerShell Script (won't do anything if option is null)
             Utils.ExecutePowerShell(_winCertesOptions.ScriptFile, pfx);
- 
             // Create the AT task that will execute WinCertes periodically (won't do anything if taskName is null)
             Utils.CreateScheduledTask(taskName, _domains);
  

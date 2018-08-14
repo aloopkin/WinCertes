@@ -9,7 +9,7 @@ namespace WinCertes.ChallengeValidator
     public class HTTPChallengeValidatorFactory
     {
         /// <summary>
-        /// Builds the HTTP Challenge Validator.
+        /// Builds the HTTP Challenge Validator. It will also initialise them.
         /// </summary>
         /// <param name="standalone">true if we use the built-in webserver, false otherwise</param>
         /// <param name="webRoot">the full path to the web server root, when not using built-in</param>
