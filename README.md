@@ -60,11 +60,11 @@ WinCertes.exe:
                                defaults to Let's Encrypt)
   -e, --email=VALUE          the account email to be used for ACME requests (
                                optional, defaults to no email)
-  -d, --domain=VALUE         the domain(s) to enroll (mandatory) *
+  -d, --domain=VALUE         the domain(s) to enroll (mandatory)
   -w, --webroot=VALUE        the web server root directory (optional, defaults
                                to c:\inetpub\wwwroot)
   -p, --periodic             should WinCertes create the Windows Scheduler task
-                               to handle certificate renewal (default=no) *
+                               to handle certificate renewal (default=no)
   -b, --bindname=VALUE       IIS site name to bind the certificate to, e.g. "
                                Default Web Site".
   -f, --scriptfile=VALUE     PowerShell Script file e.g. "C:\Temp\script.ps1"
@@ -78,8 +78,6 @@ WinCertes.exe:
                                parameters except -d)
   -k, --csp=VALUE            import the certificate into specified csp. By
                                default WinCertes imports in the default CSP.
-
-*: these paremeters are not stored into configuration.
 
 Typical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p
 This will automatically create and register account with email me@example.com, and
@@ -99,6 +97,7 @@ By default, WinCertes uses Let's Encrypt (LE) CA to issue SSL certificates. Howe
 
 
 
+[![BCH compliance](https://bettercodehub.com/edge/badge/aloopkin/WinCertes?branch=master)](https://bettercodehub.com/)
 
 
 This project is (c) 2018 Alexandre Aufrere
