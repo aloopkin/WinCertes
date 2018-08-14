@@ -47,32 +47,27 @@ namespace WinCertes
         /// </summary>
         /// <param name="serviceUri">The ACME service URI (endin in /directory). If null, defaults to Let's encrypt</param>
         /// <param name="accountEmail">The email address to be registered within the ACME account. If null, no email will be used</param>
-        public CertesWrapper(string serviceUri=null, string accountEmail=null)
+        public CertesWrapper(string serviceUri = null, string accountEmail = null)
         {
             _settings = new CertesSettings();
             _config = new RegistryConfig();
 
             // Let's initialize the password
-            PfxPassword = Guid.NewGuid().ToString("N").Substring(0,16);
+            PfxPassword = Guid.NewGuid().ToString("N").Substring(0, 16);
             logger.Debug($"PFX password will be: {PfxPassword}");
- 
+
             // Dealing with Server URI
-            if (serviceUri != null)
-            {
+            if (serviceUri != null) {
                 _settings.ServiceURI = new Uri(serviceUri);
-            }
-            else
-            {
+            } else {
                 _settings.ServiceURI = WellKnownServers.LetsEncryptV2;
             }
             // Dealing with account email
             _settings.AccountEmail = accountEmail;
-             // Dealing with key
-            if (_config.ReadStringParameter("accountKey") != null)
-            {
+            // Dealing with key
+            if (_config.ReadStringParameter("accountKey") != null) {
                 _settings.AccountKey = KeyFactory.FromPem(_config.ReadStringParameter("accountKey"));
-            } else
-            {
+            } else {
                 _settings.AccountKey = KeyFactory.NewKey(KeyAlgorithm.RS256);
                 _config.WriteStringParameter("accountKey", _settings.AccountKey.ToPem());
             }
@@ -93,8 +88,7 @@ namespace WinCertes
         /// <returns>true if registration is successful, false otherwise</returns>
         public async Task<bool> RegisterNewAccount()
         {
-            try
-            {
+            try {
                 InitCertes();
                 Certes.Acme.Resource.Directory directory = await _acme.GetDirectory();
                 InitCertes();
@@ -102,14 +96,11 @@ namespace WinCertes
                 logger.Debug($"Registered account: {accountCtx.Location.ToString()}");
                 _config.WriteIntParameter("registered", 1);
                 logger.Info($"Successfully registered account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}");
-                if (directory.Meta.TermsOfService != null)
-                {
+                if (directory.Meta.TermsOfService != null) {
                     logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
                 }
                 return true;
-            }
-            catch (Exception exp)
-            {
+            } catch (Exception exp) {
                 logger.Error($"Failed to register account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}: {exp.Message}");
                 return false;
             }
@@ -129,11 +120,10 @@ namespace WinCertes
         /// <returns></returns>
         public async Task<bool> RegisterNewOrderAndVerify(IList<string> domains, IHTTPChallengeValidator challengeValidator)
         {
-            try
-            {
+            try {
                 // Re-init to be sure to get a fresh Nonce
                 InitCertes();
-                
+
                 // Creating the order
                 _orderCtx = await _acme.NewOrder(domains);
 
@@ -168,7 +158,7 @@ namespace WinCertes
 
                         // We need to loop, because ACME service might need some time to validate the challenge token
                         int retry = 0;
-                        while (((challengeRes.Status==ChallengeStatus.Pending)||(challengeRes.Status==ChallengeStatus.Processing)) && (retry<10)) {
+                        while (((challengeRes.Status == ChallengeStatus.Pending) || (challengeRes.Status == ChallengeStatus.Processing)) && (retry < 10)) {
                             // We sleep 2 seconds between each request, to leave time to ACME service to refresh
                             System.Threading.Thread.Sleep(2000);
                             // We refresh the challenge object from ACME service
@@ -180,7 +170,7 @@ namespace WinCertes
                         challengeValidator.CleanupChallengeAfterValidation(httpChallenge.Token);
 
                         // If challenge is Invalid, Pending or Processing, something went wrong...
-                        if (challengeRes.Status!=ChallengeStatus.Valid) {
+                        if (challengeRes.Status != ChallengeStatus.Valid) {
                             throw new Exception($"Could not validate challenge {httpChallenge.Location.ToString()}");
                         }
                     } else {
@@ -188,7 +178,7 @@ namespace WinCertes
                     }
                 }
                 // If we are here, it means order was properly created, and authorizations & challenges were properly verified.
-                logger.Info($"Generated orders and validated challenges for domains: {String.Join(",",domains)}");
+                logger.Info($"Generated orders and validated challenges for domains: {String.Join(",", domains)}");
                 return true;
             } catch (Exception exp) {
                 logger.Error($"Failed to register and validate order with CA: {exp.Message}");
@@ -206,11 +196,10 @@ namespace WinCertes
             store.Open(OpenFlags.ReadOnly);
 
             var chain = "";
-            X509Certificate2Collection certsW = store.Certificates.Find(X509FindType.FindByKeyUsage,X509KeyUsageFlags.KeyCertSign, true);
+            X509Certificate2Collection certsW = store.Certificates.Find(X509FindType.FindByKeyUsage, X509KeyUsageFlags.KeyCertSign, true);
 
             logger.Debug($"Found {certsW.Count} certificate(s) in store.");
-            foreach (X509Certificate2 certW in certsW)
-            {
+            foreach (X509Certificate2 certW in certsW) {
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("-----BEGIN CERTIFICATE-----");
                 builder.AppendLine(Convert.ToBase64String(certW.Export(X509ContentType.Cert), Base64FormattingOptions.InsertLineBreaks));
@@ -230,9 +219,8 @@ namespace WinCertes
         /// <returns>The name of the generated PFX/PKCS#12 file, or null in case of error</returns>
         public async Task<string> RetrieveCertificate(string commonName, string pathForPfx, string pfxFriendlyName)
         {
-            try
-            {
-                if (_orderCtx==null) {
+            try {
+                if (_orderCtx == null) {
                     throw new Exception("Do not call RetrieveCertificate before RegisterNewOrderAndVerify");
                 }
                 if (!System.IO.Directory.Exists(pathForPfx)) {
@@ -266,9 +254,7 @@ namespace WinCertes
                 logger.Info($"Retrieved certificate from the CA. The certificate is in {pfxName}");
 
                 return pfxName;
-            }
-            catch (Exception exp)
-            {
+            } catch (Exception exp) {
                 logger.Error($"Failed to retrieve certificate from CA: {exp.Message}");
                 return null;
             }
@@ -281,19 +267,16 @@ namespace WinCertes
         /// <returns>true in case of success, false otherwise</returns>
         public async Task<bool> RevokeCertificate(X509Certificate2 certificate)
         {
-            if (certificate == null)
-            {
+            if (certificate == null) {
                 return false;
             }
-            try
-            {
+            try {
                 InitCertes();
 
                 await _acme.RevokeCertificate(certificate.RawData, RevocationReason.Unspecified, null);
 
                 return true;
-            } catch (Exception exp)
-            {
+            } catch (Exception exp) {
                 logger.Error($"Failed to revoke certificate with serial {certificate.GetSerialNumberString()} from CA: {exp.Message}");
                 return false;
             }

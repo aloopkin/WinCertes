@@ -32,18 +32,15 @@ namespace WinCertes
         /// <summary>
         /// Process PFX to extract its certificate/key into Windows objects
         /// </summary>
-       public void ProcessPFX()
+        public void ProcessPFX()
         {
-            try
-            {
+            try {
                 // If we use the default CSP, then the key should be persisted as local machine while we parse the certificate
                 X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
                 // else it should be left non-persistent so that it can disappear after treatment
                 if (!DefaultCSP) { flags = X509KeyStorageFlags.DefaultKeySet | X509KeyStorageFlags.Exportable; }
                 Certificate = new X509Certificate2(AuthenticatedPFX.PfxFullPath, AuthenticatedPFX.PfxPassword, flags);
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 logger.Error($"Impossible to extract certificate from PFX: {e.Message}");
             }
         }
@@ -53,20 +50,16 @@ namespace WinCertes
         /// </summary>
         public void ImportCertificateIntoDefaultCSP()
         {
-            if (Certificate == null)
-            {
+            if (Certificate == null) {
                 logger.Error("No certificate to import.");
                 return;
             }
-            try
-            {
+            try {
                 X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.ReadWrite);
                 store.Add(Certificate);
                 store.Close();
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 logger.Error($"Impossible to import certificate into Default CSP: {e.Message}");
             }
         }
@@ -79,8 +72,7 @@ namespace WinCertes
         /// <param name="KSP"></param>
         public void ImportPFXIntoKSP(string KSP)
         {
-            try
-            {
+            try {
                 Process process = new Process();
                 process.StartInfo.FileName = @"c:\Windows\System32\certutil.exe";
                 process.StartInfo.Arguments = $"-importPFX -p {AuthenticatedPFX.PfxPassword} -csp \"{KSP}\" -f My \"{AuthenticatedPFX.PfxFullPath}\"";
@@ -108,7 +100,7 @@ namespace WinCertes
         /// Imports the certificate into the specified CSP, or into default one if csp parameter is null
         /// </summary>
         /// <param name="csp">the name of the csp to import certificate</param>
-        public void ImportCertificateIntoCSP(string csp=null)
+        public void ImportCertificateIntoCSP(string csp = null)
         {
             if (csp == null) {
                 this.ImportCertificateIntoDefaultCSP();

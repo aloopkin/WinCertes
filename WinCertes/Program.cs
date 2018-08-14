@@ -51,8 +51,7 @@ namespace WinCertes
             // do we have a webroot parameter to handle?
             WebRoot = config.WriteAndReadStringParameter("webRoot", WebRoot);
             // if not, let's use the default web root of IIS
-            if ((WebRoot == null) && (!Standalone))
-            {
+            if ((WebRoot == null) && (!Standalone)) {
                 WebRoot = "c:\\inetpub\\wwwroot";
                 config.WriteStringParameter("webRoot", WebRoot);
             }
@@ -74,18 +73,21 @@ namespace WinCertes
         private static List<string> _domains;
         private static bool _periodic;
 
-        private readonly static string _exampleUsage = "Typical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
+        private readonly static string _exampleUsage = "\nTypical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
             + "This will automatically create and register account with email me@example.com, and\n"
             + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
             + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
             + "\"WinCertes.exe -d test1.example.com -d test2.example.com -r\" will revoke that certificate.";
 
-
+        /// <summary>
+        /// Handles command line options
+        /// </summary>
+        /// <param name="args">the command line options</param>
+        /// <returns></returns>
         private static bool HandleOptions(string[] args)
         {
             // Options that can be used by this application
-            OptionSet options = new OptionSet()
-            {
+            OptionSet options = new OptionSet() {
                 { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => _winCertesOptions.ServiceUri = v },
                 { "e|email=", "the account email to be used for ACME requests (optional, defaults to no email)", v => _winCertesOptions.Email = v },
                 { "d|domain=", "the domain(s) to enroll (mandatory)", v => _domains.Add(v) },
@@ -143,20 +145,17 @@ namespace WinCertes
         private static void RevokeCert(List<string> domains)
         {
             string serial = _config.ReadStringParameter("certSerial" + Utils.DomainsToHostId(domains));
-            if (serial == null)
-            {
+            if (serial == null) {
                 _logger.Error($"Could not find certificate matching primary domain {domains[0]}. Please check the Subject CN of the certificate you wish to revoke");
                 return;
             }
             X509Certificate2 cert = Utils.GetCertificateBySerial(serial);
-            if (cert == null)
-            {
+            if (cert == null) {
                 _logger.Error($"Could not find certificate matching serial {serial}. Please check the Certificate Store");
                 return;
             }
             var revRes = Task.Run(() => _certesWrapper.RevokeCertificate(cert)).GetAwaiter().GetResult();
-            if (revRes)
-            {
+            if (revRes) {
                 _config.DeleteParameter("CertExpDate" + Utils.DomainsToHostId(domains));
                 _config.DeleteParameter("CertSerial" + Utils.DomainsToHostId(domains));
                 X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
@@ -173,8 +172,7 @@ namespace WinCertes
         private static void InitWinCertesDirectoryPath()
         {
             _winCertesPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + "\\WinCertes";
-            if (!System.IO.Directory.Exists(_winCertesPath))
-            {
+            if (!System.IO.Directory.Exists(_winCertesPath)) {
                 System.IO.Directory.CreateDirectory(_winCertesPath);
             }
         }
@@ -203,8 +201,7 @@ namespace WinCertes
             _certesWrapper = new CertesWrapper(serviceUri, email);
 
             // If local computer's account isn't registered on the ACME service, we'll do it.
-            if (!_certesWrapper.IsAccountRegistered())
-            {
+            if (!_certesWrapper.IsAccountRegistered()) {
                 var regRes = Task.Run(() => _certesWrapper.RegisterNewAccount()).GetAwaiter().GetResult();
                 if (!regRes) {
                     throw new Exception("Could not register ACME service account");
@@ -253,7 +250,7 @@ namespace WinCertes
             challengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
-            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains[0],_winCertesPath,Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
+            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains[0], _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
             if (pfxName == null) { return; }
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, (_winCertesOptions.Csp == null));
@@ -270,7 +267,7 @@ namespace WinCertes
             Utils.ExecutePowerShell(_winCertesOptions.ScriptFile, pfx);
             // Create the AT task that will execute WinCertes periodically (won't do anything if taskName is null)
             Utils.CreateScheduledTask(taskName, _domains);
- 
+
             // Let's delete the PFX file
             RemoveFileAndLog(pfx.PfxFullPath);
         }

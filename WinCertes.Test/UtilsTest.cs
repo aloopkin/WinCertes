@@ -16,8 +16,7 @@ namespace WinCertes.Tests
             domains.Add("test2.example.com");
             domains.Sort();
             string hostId = Utils.DomainsToHostId(domains);
-            if (!hostId.Equals("_6fb23d16b162f18a"))
-            {
+            if (!hostId.Equals("_6fb23d16b162f18a")) {
                 // we're not ok
                 Assert.Fail();
             }
@@ -38,8 +37,7 @@ namespace WinCertes.Test
             domains.Add("test2.example.com");
             domains.Sort();
             string friendlyName = Utils.DomainsToFriendlyName(domains);
-            if (!friendlyName.Equals("test.example.com"))
-            {
+            if (!friendlyName.Equals("test.example.com")) {
                 // we're not ok
                 Assert.Fail();
             }

@@ -7,7 +7,7 @@ namespace WinCertes.ChallengeValidator
     /// </summary>
     class HTTPChallengeFileValidator : IHTTPChallengeValidator
     {
-        string _challengeVerifyPath="";
+        string _challengeVerifyPath = "";
 
         /// <summary>
         /// Class constructor
@@ -28,7 +28,7 @@ namespace WinCertes.ChallengeValidator
         /// <param name="keyAuthz"></param>
         public void PrepareChallengeForValidation(string token, string keyAuthz)
         {
-           // And we create the token validation file for the challenge
+            // And we create the token validation file for the challenge
             File.WriteAllText($"{_challengeVerifyPath}\\.well-known\\acme-challenge\\{token}", keyAuthz);
         }
 

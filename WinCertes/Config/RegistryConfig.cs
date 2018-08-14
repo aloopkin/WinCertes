@@ -14,8 +14,7 @@ namespace WinCertes
         /// </summary>
         public RegistryConfig()
         {
-            if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null)
-            {
+            if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null) {
                 Registry.LocalMachine.OpenSubKey("SOFTWARE").CreateSubKey("WinCertes");
             }
         }
@@ -37,7 +36,7 @@ namespace WinCertes
         /// <param name="value">the parameter value</param>
         public void WriteStringParameter(string parameter, string value)
         {
-            if ((parameter==null)||(value==null)) { return; }
+            if ((parameter == null) || (value == null)) { return; }
             Registry.SetValue(_registryKey, parameter, value, RegistryValueKind.String);
         }
 
@@ -49,8 +48,7 @@ namespace WinCertes
         /// <returns>the value of the configuration parameter, null if none</returns>
         public string WriteAndReadStringParameter(string parameter, string value)
         {
-            if (value != null)
-            {
+            if (value != null) {
                 WriteStringParameter(parameter, value);
             }
             return ReadStringParameter(parameter);
@@ -65,8 +63,7 @@ namespace WinCertes
         public string ReadOrWriteStringParameter(string parameter, string value)
         {
             string myValue = ReadStringParameter(parameter);
-            if (myValue == null)
-            {
+            if (myValue == null) {
                 WriteStringParameter(parameter, value);
             }
             return ReadStringParameter(parameter);
@@ -78,7 +75,7 @@ namespace WinCertes
         /// <param name="parameter"></param>
         /// <param name="defaultValue"></param>
         /// <returns></returns>
-        public int ReadIntParameter(string parameter, int defaultValue=0)
+        public int ReadIntParameter(string parameter, int defaultValue = 0)
         {
             return (int)Registry.GetValue(_registryKey, parameter, defaultValue);
         }
@@ -102,8 +99,7 @@ namespace WinCertes
         /// <returns>the flag's value</returns>
         public bool WriteAndReadBooleanParameter(string parameter, bool value)
         {
-            if (value)
-            {
+            if (value) {
                 WriteIntParameter(parameter, 1);
             }
             return (ReadIntParameter(parameter, 0) == 1);
@@ -115,9 +111,8 @@ namespace WinCertes
         /// <param name="parameter"></param>
         public void DeleteParameter(string parameter)
         {
-            RegistryKey key= Registry.LocalMachine.OpenSubKey(@"Software\WinCertes", true);
-            if (key!=null)
-            {
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\WinCertes", true);
+            if (key != null) {
                 key.DeleteValue(parameter);
             }
         }
