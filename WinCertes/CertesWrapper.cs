@@ -96,9 +96,7 @@ namespace WinCertes
                 logger.Debug($"Registered account: {accountCtx.Location.ToString()}");
                 _config.WriteIntParameter("registered", 1);
                 logger.Info($"Successfully registered account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}");
-                if (directory.Meta.TermsOfService != null) {
-                    logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
-                }
+                if (directory.Meta.TermsOfService != null) logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
                 return true;
             } catch (Exception exp) {
                 logger.Error($"Failed to register account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}: {exp.Message}");
