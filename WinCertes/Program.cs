@@ -63,13 +63,57 @@ namespace WinCertes
         private static CertesWrapper _certesWrapper;
         private static IConfig _config;
         private static string _winCertesPath;
+        private static WinCertesOptions _winCertesOptions;
+        private static List<string> _domains;
+        private static bool _periodic;
 
-        private static readonly string _additionalInfo = "\n*: these paremeters are not stored into configuration.\n\n"
+        private static bool HandleOptions(string[] args)
+        {
+            // Options that can be used by this application
+            OptionSet options = new OptionSet()
+            {
+                { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => _winCertesOptions.ServiceUri = v },
+                { "e|email=", "the account email to be used for ACME requests (optional, defaults to no email)", v => _winCertesOptions.Email = v },
+                { "d|domain=", "the domain(s) to enroll (mandatory) *", v => _domains.Add(v) },
+                { "w|webroot=", "the web server root directory (optional, defaults to c:\\inetpub\\wwwroot)", v => _winCertesOptions.WebRoot = v },
+                { "p|periodic", "should WinCertes create the Windows Scheduler task to handle certificate renewal (default=no) *", v => _periodic = (v != null) },
+                { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\".", v => _winCertesOptions.BindName = v },
+                { "f|scriptfile=", "PowerShell Script file e.g. \"C:\\Temp\\script.ps1\" to execute upon successful enrollment (default=none)", v => _winCertesOptions.ScriptFile = v },
+                { "a|standalone", "should WinCertes create its own WebServer for validation (default=no). WARNING: it will use port 80", v => _winCertesOptions.Standalone = (v != null) },
+                { "r|revoke", "should WinCertes revoke the certificate identified by its domains (incompatible with other parameters except -d)", v => _winCertesOptions.Revoke = (v != null) },
+                { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v }
+            };
+
+            string _additionalInfo = "\n*: these paremeters are not stored into configuration.\n\n"
             + "Typical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
             + "This will automatically create and register account with email me@example.com, and\n"
             + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
             + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
             + "\"WinCertes.exe -d test1.example.com -d test2.example.com -r\" will revoke that certificate.";
+
+            // and the handling of these options
+            List<string> res;
+            try
+            {
+                res = options.Parse(args);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("WinCertes.exe: " + e.Message);
+                options.WriteOptionDescriptions(Console.Out);
+                Console.WriteLine(_additionalInfo);
+                return false;
+            }
+            if (_domains.Count == 0)
+            {
+                Console.WriteLine("WinCertes.exe: At least one domain must be specified");
+                options.WriteOptionDescriptions(Console.Out);
+                Console.WriteLine(_additionalInfo);
+                return false;
+            }
+            _domains.Sort();
+            return true;
+        }
 
         /// <summary>
         /// Checks whether the enrolled certificate should be renewed
@@ -167,112 +211,79 @@ namespace WinCertes
 
         static void Main(string[] args)
         {
-            // Main parameters with their default values
-            WinCertesOptions winCertesOptions = new WinCertesOptions();
-            List<string> domains = new List<string>();
-            bool periodic = false;
-            // Options that can be used by this application
-            OptionSet options = new OptionSet()
-            {
-                { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => winCertesOptions.ServiceUri = v },
-                { "e|email=", "the account email to be used for ACME requests (optional, defaults to no email)", v => winCertesOptions.Email = v },
-                { "d|domain=", "the domain(s) to enroll (mandatory) *", v => domains.Add(v) },
-                { "w|webroot=", "the web server root directory (optional, defaults to c:\\inetpub\\wwwroot)", v => winCertesOptions.WebRoot = v },
-                { "p|periodic", "should WinCertes create the Windows Scheduler task to handle certificate renewal (default=no) *", v => periodic = (v != null) },
-                { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\".", v => winCertesOptions.BindName = v },
-                { "f|scriptfile=", "PowerShell Script file e.g. \"C:\\Temp\\script.ps1\" to execute upon successful enrollment (default=none)", v => winCertesOptions.ScriptFile = v },
-                { "a|standalone", "should WinCertes create its own WebServer for validation (default=no). WARNING: it will use port 80", v => winCertesOptions.Standalone = (v != null) },
-                { "r|revoke", "should WinCertes revoke the certificate identified by its domains (incompatible with other parameters except -d)", v => winCertesOptions.Revoke = (v != null) },
-                { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => winCertesOptions.Csp = v }
-            };
-            // and the handling of these options
-            List<string> res;
-            try
-            {
-                res = options.Parse(args);
-            } catch(Exception e)
-            {
-                Console.WriteLine("WinCertes.exe: " + e.Message);
-                options.WriteOptionDescriptions(Console.Out);
-                Console.WriteLine(_additionalInfo);
-                return;
-            }
-            if (domains.Count==0)
-            {
-                Console.WriteLine("WinCertes.exe: At least one domain must be specified");
-                options.WriteOptionDescriptions(Console.Out);
-                Console.WriteLine(_additionalInfo);
-                return;
-            }
-            domains.Sort();
             if (!Utils.IsAdministrator())
             {
                 Console.WriteLine("WinCertes.exe must be launched as Administrator");
                 return;
             }
+
+            // Main parameters with their default values
+            string taskName = null;
+            _winCertesOptions = new WinCertesOptions();
+            _domains = new List<string>();
+            _periodic = false;
+
+            if (!HandleOptions(args)) { return; }
+
             // Let's create the path where we will put the PFX files, and the log files
             InitWinCertesDirectoryPath();
             // Let's configure the logger
             Utils.ConfigureLogger(_winCertesPath);
 
             _config = new RegistryConfig();
-            winCertesOptions.WriteOptionsIntoConfiguration(_config);
+            _winCertesOptions.WriteOptionsIntoConfiguration(_config);
 
-            // Is there an existing certificate that needs to be renewed ?
-            if (!IsThereCertificateAndIsItToBeRenewed(domains) && !winCertesOptions.Revoke) {
-                _logger.Debug("No need to renew certificate");
-                if (periodic)
-                {
-                    Utils.CreateScheduledTask(Utils.DomainsToFriendlyName(domains), domains);
-                }
-                return;
-            }
 
             try
             {
                 // Initializing the CertesWrapper
-                InitCertesWrapper(winCertesOptions.ServiceUri, winCertesOptions.Email);
+                InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
             } catch (Exception e)
             {
                 _logger.Error(e.Message);
                 return;
             }
 
-            if (winCertesOptions.Revoke)
-            {
-                RevokeCert(domains);
+            if (_winCertesOptions.Revoke) {
+                RevokeCert(_domains);
+                return;
+            }
+
+            if (_periodic) { taskName = Utils.DomainsToFriendlyName(_domains); }
+
+            // Is there an existing certificate that needs to be renewed ?
+            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) {
+                _logger.Debug("Certificate exists and does not need to be renewed");
+                Utils.CreateScheduledTask(taskName, _domains);
                 return;
             }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
-            IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(winCertesOptions.Standalone, winCertesOptions.WebRoot);
-            var result = Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(domains, challengeValidator)).GetAwaiter().GetResult();
+            IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
+            var result = Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, challengeValidator)).GetAwaiter().GetResult();
             if (!result) { return; }
             challengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
-            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(domains[0],_winCertesPath,Utils.DomainsToFriendlyName(domains))).GetAwaiter().GetResult();
+            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains[0],_winCertesPath,Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
             if (pfxName==null) { return; }
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx);
-            certificateStorageManager.ProcessPFX((winCertesOptions.Csp == null));
+            certificateStorageManager.ProcessPFX((_winCertesOptions.Csp == null));
             // and we write its information to the WinCertes configuration
-            RegisterCertificateIntoConfiguration(certificateStorageManager.certificate, domains);
+            RegisterCertificateIntoConfiguration(certificateStorageManager.certificate, _domains);
             // Import the certificate into the Windows store
-            certificateStorageManager.ImportCertificateIntoCSP(winCertesOptions.Csp);
+            certificateStorageManager.ImportCertificateIntoCSP(_winCertesOptions.Csp);
 
             // Bind certificate to IIS Site (won't do anything if option is null)
-            Utils.BindCertificateForIISSite(certificateStorageManager.certificate, winCertesOptions.BindName);
+            Utils.BindCertificateForIISSite(certificateStorageManager.certificate, _winCertesOptions.BindName);
 
             // Execute PowerShell Script (won't do anything if option is null)
-            Utils.ExecutePowerShell(winCertesOptions.ScriptFile, pfx);
+            Utils.ExecutePowerShell(_winCertesOptions.ScriptFile, pfx);
  
-            // Should we create the AT task that will execute WinCertes periodically
-            if (periodic)
-            {
-                Utils.CreateScheduledTask(Utils.DomainsToFriendlyName(domains), domains);
-            }
-
+            // Create the AT task that will execute WinCertes periodically (won't do anything if taskName is null)
+            Utils.CreateScheduledTask(taskName, _domains);
+ 
             File.Delete(pfx.PfxFullPath);
             _logger.Info($"Removed PFX from filesystem: {pfxName}");
         }

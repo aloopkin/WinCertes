@@ -173,12 +173,16 @@ namespace WinCertes
         }
 
         /// <summary>
-        /// Creates the AT task
+        /// Creates the windows scheduled task
         /// </summary>
         /// <param name="domains"></param>
-        /// <param name="import"></param>
+        /// <param name="taskName"></param>
         public static void CreateScheduledTask(string taskName, List<string> domains)
         {
+            if (taskName == null)
+            {
+                return;
+            }
             try
             {
                 using (TS.TaskService ts = new TS.TaskService())
