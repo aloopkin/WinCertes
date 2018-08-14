@@ -224,9 +224,7 @@ namespace WinCertes
 
             if (!HandleOptions(args)) { return; }
 
-            // Let's create the path where we will put the PFX files, and the log files
             InitWinCertesDirectoryPath();
-            // Let's configure the logger
             Utils.ConfigureLogger(_winCertesPath);
 
             _config = new RegistryConfig();
@@ -234,7 +232,6 @@ namespace WinCertes
 
 
             try {
-                // Initializing the CertesWrapper
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
             } catch (Exception e) {
                 _logger.Error(e.Message);
@@ -248,7 +245,6 @@ namespace WinCertes
 
             if (_periodic) { taskName = Utils.DomainsToFriendlyName(_domains); }
 
-            // Is there an existing certificate that needs to be renewed ?
             if (!IsThereCertificateAndIsItToBeRenewed(_domains)) {
                 _logger.Debug("Certificate exists and does not need to be renewed");
                 Utils.CreateScheduledTask(taskName, _domains);
