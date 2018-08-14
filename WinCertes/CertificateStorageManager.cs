@@ -89,23 +89,17 @@ namespace WinCertes
                 process.StartInfo.CreateNoWindow = true;
                 process.Start();
                 string output = "";
-                while (!process.StandardOutput.EndOfStream)
-                {
+                while (!process.StandardOutput.EndOfStream) {
                     output += process.StandardOutput.ReadLine() + "\n";
                 }
                 process.WaitForExit();
                 logger.Debug(output);
-                if (output.Contains("FAILED"))
-                {
+                if (output.Contains("FAILED")) {
                     logger.Error($"Impossible to import certificate into KSP {KSP}: {output}");
-                }
-                else
-                {
+                } else {
                     logger.Info($"Successfully imported certificate into KSP {KSP}");
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 logger.Error($"Impossible to import certificate into KSP {KSP}: {e.Message}");
             }
         }
@@ -116,12 +110,9 @@ namespace WinCertes
         /// <param name="csp">the name of the csp to import certificate</param>
         public void ImportCertificateIntoCSP(string csp=null)
         {
-            if (csp == null)
-            {
+            if (csp == null) {
                 this.ImportCertificateIntoDefaultCSP();
-            }
-            else
-            {
+            } else {
                 this.ImportPFXIntoKSP(csp);
             }
         }
