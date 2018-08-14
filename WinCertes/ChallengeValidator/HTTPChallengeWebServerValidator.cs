@@ -19,15 +19,11 @@ namespace WinCertes.ChallengeValidator
             _listener.Prefixes.Add("http://*:80/");
             _listener.Start();
             logger.Debug("Started Listener on port 80");
-            while (true)
-            {
-                try
-                {
+            while (true) {
+                try {
                     HttpListenerContext context = _listener.GetContext();
                     Process(context);
-                }
-                catch (Exception)
-                {
+                } catch (Exception) {
                     // ignore error, as thread abort will generate one anyway
                 }
             }
@@ -57,8 +53,7 @@ namespace WinCertes.ChallengeValidator
         /// </summary>
         public HTTPChallengeWebServerValidator()
         {
-            _serverThread = new Thread(this.Listen)
-            {
+            _serverThread = new Thread(this.Listen) {
                 IsBackground = true
             };
             _serverThread.Start();
