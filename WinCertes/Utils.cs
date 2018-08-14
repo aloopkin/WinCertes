@@ -20,6 +20,33 @@ using TS = Microsoft.Win32.TaskScheduler;
 namespace WinCertes
 {
     /// <summary>
+    /// Convenience class to store PFX and its password together
+    /// </summary>
+    public class AuthenticatedPFX
+    {
+        /// <summary>
+        /// Constructor for the class
+        /// </summary>
+        /// <param name="pfxFullPath"></param>
+        /// <param name="pfxPassword"></param>
+        public AuthenticatedPFX(string pfxFullPath, string pfxPassword)
+        {
+            PfxFullPath = pfxFullPath;
+            PfxPassword = pfxPassword;
+        }
+
+        /// <summary>
+        /// Full path to the pfx, including the PFX
+        /// </summary>
+        public string PfxFullPath { get; set; }
+
+        /// <summary>
+        /// PFX password
+        /// </summary>
+        public string PfxPassword { get; set; }
+    }
+
+    /// <summary>
     /// This class is a catalog of static methods to be used for various purposes within WinCertes
     /// </summary>
     class Utils
@@ -33,7 +60,7 @@ namespace WinCertes
         /// <param name="pfx"></param>
         /// <param name="pfxPassword"></param>
         /// <returns></returns>
-        public static bool ExecutePowerShell(string scriptFile, string pfx, string pfxPassword)
+        public static bool ExecutePowerShell(string scriptFile, AuthenticatedPFX pfx)
         {
             try
             {
@@ -47,9 +74,9 @@ namespace WinCertes
 
                 // We create the script to execute with its arguments as a Command
                 System.Management.Automation.Runspaces.Command myCommand = new System.Management.Automation.Runspaces.Command(scriptFile);
-                CommandParameter pfxParam = new CommandParameter("pfx", pfx);
+                CommandParameter pfxParam = new CommandParameter("pfx", pfx.PfxFullPath);
                 myCommand.Parameters.Add(pfxParam);
-                CommandParameter pfxPassParam = new CommandParameter("pfxPassword", pfxPassword);
+                CommandParameter pfxPassParam = new CommandParameter("pfxPassword", pfx.PfxPassword);
                 myCommand.Parameters.Add(pfxPassParam);
 
                 // add the created Command to the pipeline
@@ -68,19 +95,18 @@ namespace WinCertes
         }
 
         /// <summary>
-        /// Binds the specified certificate located in specified store to the specified IIS site on the local machine
+        /// Binds the specified certificate located in "MY" store to the specified IIS site on the local machine
         /// </summary>
         /// <param name="certificate"></param>
         /// <param name="siteName"></param>
-        /// <param name="store"></param>
         /// <returns>true in case of success, false otherwise</returns>
-        public static bool BindCertificateForIISSite(X509Certificate2 certificate, string siteName, string storeName)
+        public static bool BindCertificateForIISSite(X509Certificate2 certificate, string siteName)
         {
             try
             {
                 ServerManager mgr = new ServerManager();
                 Site site = mgr.Sites[siteName];
-                Binding binding = site.Bindings.Add("*:443", certificate.GetCertHash(), storeName);
+                Binding binding = site.Bindings.Add("*:443", certificate.GetCertHash(), "MY");
                 binding.Protocol = "https";
                 mgr.CommitChanges();
                 return true;
@@ -266,13 +292,13 @@ namespace WinCertes
         /// <param name="pfxFullPath"></param>
         /// <param name="pfxPassword"></param>
         /// <param name="KSP"></param>
-        public static void ImportPFXIntoKSP(string pfxFullPath, string pfxPassword, string KSP)
+        public static void ImportPFXIntoKSP(AuthenticatedPFX pfx, string KSP)
         {
             try
             {
                 Process process = new Process();
                 process.StartInfo.FileName = @"c:\Windows\System32\certutil.exe";
-                process.StartInfo.Arguments = $"-importPFX -p {pfxPassword} -csp \"{KSP}\" -f My \"{pfxFullPath}\"";
+                process.StartInfo.Arguments = $"-importPFX -p {pfx.PfxPassword} -csp \"{KSP}\" -f My \"{pfx.PfxFullPath}\"";
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.CreateNoWindow = true;
