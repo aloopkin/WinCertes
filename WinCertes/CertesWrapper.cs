@@ -141,33 +141,8 @@ namespace WinCertes
                     // Get the HTTP challenge
                     var httpChallenge = await authz.Http();
                     if (httpChallenge != null) {
-                        // We get the resource fresh
-                        var httpChallengeStatus = await httpChallenge.Resource();
-
-                        // If it's invalid, we stop right away. Should not happen, but anyway...
-                        if (httpChallengeStatus.Status == ChallengeStatus.Invalid) throw new Exception("HTTP challenge has an invalid status");
-
-                        // Else we start the challenge validation
-                        challengeValidator.PrepareChallengeForValidation(httpChallenge.Token, httpChallenge.KeyAuthz);
-
-                        // Now let's ping the ACME service to validate the challenge token
-                        Challenge challengeRes = await httpChallenge.Validate();
-
-                        // We need to loop, because ACME service might need some time to validate the challenge token
-                        int retry = 0;
-                        while (((challengeRes.Status == ChallengeStatus.Pending) || (challengeRes.Status == ChallengeStatus.Processing)) && (retry < 10)) {
-                            // We sleep 2 seconds between each request, to leave time to ACME service to refresh
-                            System.Threading.Thread.Sleep(2000);
-                            // We refresh the challenge object from ACME service
-                            challengeRes = await httpChallenge.Resource();
-                            retry++;
-                        }
-
-                        // Finally we cleanup everything that was needed for validation
-                        challengeValidator.CleanupChallengeAfterValidation(httpChallenge.Token);
-
-                        // If challenge is Invalid, Pending or Processing, something went wrong...
-                        if (challengeRes.Status != ChallengeStatus.Valid) {
+                        var resValidation = await ValidateChallenge(httpChallenge, challengeValidator);
+                        if (!resValidation) {
                             throw new Exception($"Could not validate challenge {httpChallenge.Location.ToString()}");
                         }
                     } else {
@@ -181,6 +156,45 @@ namespace WinCertes
                 logger.Error($"Failed to register and validate order with CA: {exp.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Small method that validates one challenge using the specified validator
+        /// </summary>
+        /// <param name="httpChallenge"></param>
+        /// <param name="challengeValidator"></param>
+        /// <returns>true if validated, false otherwise</returns>
+        private async Task<bool> ValidateChallenge(IChallengeContext httpChallenge, IHTTPChallengeValidator challengeValidator)
+        {
+            // We get the resource fresh
+            var httpChallengeStatus = await httpChallenge.Resource();
+
+            // If it's invalid, we stop right away. Should not happen, but anyway...
+            if (httpChallengeStatus.Status == ChallengeStatus.Invalid) throw new Exception("HTTP challenge has an invalid status");
+
+            // Else we start the challenge validation
+            challengeValidator.PrepareChallengeForValidation(httpChallenge.Token, httpChallenge.KeyAuthz);
+
+            // Now let's ping the ACME service to validate the challenge token
+            Challenge challengeRes = await httpChallenge.Validate();
+
+            // We need to loop, because ACME service might need some time to validate the challenge token
+            int retry = 0;
+            while (((challengeRes.Status == ChallengeStatus.Pending) || (challengeRes.Status == ChallengeStatus.Processing)) && (retry < 10)) {
+                // We sleep 2 seconds between each request, to leave time to ACME service to refresh
+                System.Threading.Thread.Sleep(2000);
+                // We refresh the challenge object from ACME service
+                challengeRes = await httpChallenge.Resource();
+                retry++;
+            }
+
+            // Finally we cleanup everything that was needed for validation
+            challengeValidator.CleanupChallengeAfterValidation(httpChallenge.Token);
+
+            // If challenge is Invalid, Pending or Processing, something went wrong...
+            if (challengeRes.Status != ChallengeStatus.Valid) return false;
+
+            return true;
         }
 
         /// <summary>

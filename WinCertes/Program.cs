@@ -71,7 +71,7 @@ namespace WinCertes
         private static string _winCertesPath;
         private static WinCertesOptions _winCertesOptions;
         private static List<string> _domains;
-        private static bool _periodic;
+        private static bool _periodic = false;
 
         /// <summary>
         /// Handles command line options
@@ -81,6 +81,7 @@ namespace WinCertes
         private static bool HandleOptions(string[] args)
         {
             if (!Utils.IsAdministrator()) { Console.WriteLine("WinCertes.exe must be launched as Administrator"); return false; }
+            _domains = new List<string>();
 
             // Options that can be used by this application
             OptionSet options = new OptionSet() {
@@ -218,6 +219,10 @@ namespace WinCertes
             }
         }
 
+        /// <summary>
+        /// Removes specified files and logs it
+        /// </summary>
+        /// <param name="path"></param>
         private static void RemoveFileAndLog(string path)
         {
             File.Delete(path);
@@ -229,9 +234,7 @@ namespace WinCertes
             // Main parameters with their default values
             string taskName = null;
             _winCertesOptions = new WinCertesOptions();
-            _domains = new List<string>();
-            _periodic = false;
-
+ 
             // Command line options handling and initialization stuff
             if (!HandleOptions(args)) return;
             if (_periodic) taskName = Utils.DomainsToFriendlyName(_domains);
