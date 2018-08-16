@@ -50,15 +50,13 @@ namespace WinCertes
         /// </summary>
         public void ImportCertificateIntoDefaultCSP()
         {
-            if (Certificate == null) {
-                logger.Error("No certificate to import.");
-                return;
-            }
+            if (Certificate == null) { logger.Error("No certificate to import."); return; }
             try {
                 X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.ReadWrite);
                 store.Add(Certificate);
                 store.Close();
+                logger.Info($"Stored certificate with DN {Certificate.Subject} into Windows Personal Local Machine store");
             } catch (Exception e) {
                 logger.Error($"Impossible to import certificate into Default CSP: {e.Message}");
             }
