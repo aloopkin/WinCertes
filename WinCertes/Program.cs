@@ -80,7 +80,6 @@ namespace WinCertes
         /// <returns></returns>
         private static bool HandleOptions(string[] args)
         {
-            if (!Utils.IsAdministrator()) { Console.WriteLine("WinCertes.exe must be launched as Administrator"); return false; }
             _domains = new List<string>();
 
             // Options that can be used by this application
@@ -229,6 +228,7 @@ namespace WinCertes
             string taskName = null;
             _winCertesOptions = new WinCertesOptions();
 
+            if (!Utils.IsAdministrator()) { Console.WriteLine("WinCertes.exe must be launched as Administrator"); return; }
             // Command line options handling and initialization stuff
             if (!HandleOptions(args)) return;
             if (_periodic) taskName = Utils.DomainsToFriendlyName(_domains);

@@ -99,6 +99,7 @@ namespace WinCertes
                 return true;
             } catch (Exception exp) {
                 logger.Error($"Failed to register account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}: {exp.Message}");
+                logger.Info($"Error Details: {exp.StackTrace}");
                 return false;
             }
         }
