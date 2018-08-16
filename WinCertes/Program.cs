@@ -2,12 +2,12 @@ using Mono.Options;
 using NLog;
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using System.Globalization;
-using System.Threading;
-using WinCertes.ChallengeValidator;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading;
+using System.Threading.Tasks;
+using WinCertes.ChallengeValidator;
 
 namespace WinCertes
 {
