@@ -83,6 +83,21 @@ namespace WinCertes
         }
 
         /// <summary>
+        /// Fetches the useful error messages from within the exceptions stack within Certes
+        /// </summary>
+        /// <param name="exp">the exception to process</param>
+        /// <returns>the error messages concatenated as string</returns>
+        private string ProcessCertesException(Exception exp)
+        {
+            string errorMessage = exp.Message;
+            if (exp.InnerException != null) {
+                errorMessage += " - " + exp.InnerException.Message;
+                if (exp.InnerException.InnerException != null) errorMessage += " - " + exp.InnerException.InnerException.Message;
+            }
+            return errorMessage;
+        }
+
+        /// <summary>
         /// Register the local computer's account on the ACME service
         /// </summary>
         /// <returns>true if registration is successful, false otherwise</returns>
@@ -98,8 +113,7 @@ namespace WinCertes
                 if (directory.Meta.TermsOfService != null) logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
                 return true;
             } catch (Exception exp) {
-                logger.Error($"Failed to register account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}: {exp.Message}");
-                logger.Info($"Error Details: {exp.StackTrace}");
+                logger.Error($"Failed to register account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}: {ProcessCertesException(exp)}");
                 return false;
             }
         }
@@ -147,7 +161,7 @@ namespace WinCertes
                 logger.Info($"Generated orders and validated challenges for domains: {String.Join(",", domains)}");
                 return true;
             } catch (Exception exp) {
-                logger.Error($"Failed to register and validate order with CA: {exp.Message}");
+                logger.Error($"Failed to register and validate order with CA: {ProcessCertesException(exp)}");
                 return false;
             }
         }
@@ -250,7 +264,7 @@ namespace WinCertes
 
                 return pfxName;
             } catch (Exception exp) {
-                logger.Error($"Failed to retrieve certificate from CA: {exp.Message}");
+                logger.Error($"Failed to retrieve certificate from CA: {ProcessCertesException(exp)}");
                 return null;
             }
         }
@@ -270,7 +284,7 @@ namespace WinCertes
 
                 return true;
             } catch (Exception exp) {
-                logger.Error($"Failed to revoke certificate with serial {certificate.GetSerialNumberString()} from CA: {exp.Message}");
+                logger.Error($"Failed to revoke certificate with serial {certificate.GetSerialNumberString()} from CA: {ProcessCertesException(exp)}");
                 return false;
             }
         }

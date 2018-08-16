@@ -16,6 +16,8 @@ namespace WinCertes
     /// </summary>
     class WinCertesOptions
     {
+        private static readonly ILogger _logger = LogManager.GetLogger("WinCertes.WinCertesOptions");
+
         public WinCertesOptions()
         {
             ServiceUri = null;
@@ -42,23 +44,27 @@ namespace WinCertes
         /// <param name="config">the configuration object</param>
         public void WriteOptionsIntoConfiguration(IConfig config)
         {
-            // write service URI into conf, or reads from it, if any
-            ServiceUri = config.WriteAndReadStringParameter("serviceUri", ServiceUri);
-            // write account email into conf, or reads from it, if any
-            Email = config.WriteAndReadStringParameter("accountEmail", Email);
-            // Should we work with the built-in web server
-            Standalone = config.WriteAndReadBooleanParameter("standalone", Standalone);
-            // do we have a webroot parameter to handle?
-            WebRoot = config.WriteAndReadStringParameter("webRoot", WebRoot);
-            // if not, let's use the default web root of IIS
-            if ((WebRoot == null) && (!Standalone)) {
-                WebRoot = "c:\\inetpub\\wwwroot";
-                config.WriteStringParameter("webRoot", WebRoot);
+            try {
+                // write service URI into conf, or reads from it, if any
+                ServiceUri = config.WriteAndReadStringParameter("serviceUri", ServiceUri);
+                // write account email into conf, or reads from it, if any
+                Email = config.WriteAndReadStringParameter("accountEmail", Email);
+                // Should we work with the built-in web server
+                Standalone = config.WriteAndReadBooleanParameter("standalone", Standalone);
+                // do we have a webroot parameter to handle?
+                WebRoot = config.WriteAndReadStringParameter("webRoot", WebRoot);
+                // if not, let's use the default web root of IIS
+                if ((WebRoot == null) && (!Standalone)) {
+                    WebRoot = "c:\\inetpub\\wwwroot";
+                    config.WriteStringParameter("webRoot", WebRoot);
+                }
+                // Should we bind to IIS? If yes, let's do some config
+                BindName = config.WriteAndReadStringParameter("bindName", BindName);
+                // Should we execute some PowerShell ? If yes, let's do some config
+                ScriptFile = config.WriteAndReadStringParameter("scriptFile", ScriptFile);
+            } catch (Exception e) {
+                _logger.Error($"Could not Read/Write command line parameters to configuration: {e.Message}");
             }
-            // Should we bind to IIS? If yes, let's do some config
-            BindName = config.WriteAndReadStringParameter("bindName", BindName);
-            // Should we execute some PowerShell ? If yes, let's do some config
-            ScriptFile = config.WriteAndReadStringParameter("scriptFile", ScriptFile);
         }
     }
 
