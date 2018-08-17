@@ -105,6 +105,21 @@ WinCertes gives the option to launch a PowerShell script upon successfull enroll
 The PFX can then be parsed using e.g. [Get-PfxData](https://docs.microsoft.com/en-us/powershell/module/pkiclient/get-pfxdata), and later on 
 re-exported with different pasword, or imported within a different Windows store.
 
+The following code is a simple example of PowerShell script that you can call from WinCertes:
+```PS
+Param(
+                [Parameter(Mandatory=$True,Position=1)]
+                [string]$pfx,
+                [Parameter(Mandatory=$True)]
+                [string]$pfxPassword
+                )
+
+$mypwd = ConvertTo-SecureString -String $pfxPassword -Force -AsPlainText
+$mypfx = Get-PfxData -FilePath $pfx -Password $mypwd
+
+$mypfx.EndEntityCertificates.Subject | Out-File -FilePath c:\temp\test.txt -Append
+```
+
 
 
 [![BCH compliance](https://bettercodehub.com/edge/badge/aloopkin/WinCertes?branch=master)](https://bettercodehub.com/)
