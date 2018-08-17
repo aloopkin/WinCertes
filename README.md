@@ -30,7 +30,7 @@ Quick Start (IIS users)
 1. Download from GitHub and install it.
 2. Launch a command line (cmd.exe) as Administrator
 3. Enter the following command:
-```DOS
+```dos
 WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -b "Default Web Site" -p
 ```
 And... That's all! The certificate is requested from Let's Encrypt, and bound to IIS' Default Web Site
@@ -54,7 +54,7 @@ The development requires Visual Studio 2017, and Wix if you want to build the in
 Command Line Options
 -------------
 
-```DOS
+```dos
 WinCertes.exe:
   -s, --service=VALUE        the ACME Service URI to be used (optional,
                                defaults to Let's Encrypt)
