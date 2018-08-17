@@ -1,4 +1,6 @@
 ﻿using Microsoft.Win32;
+using NLog;
+using System;
 
 namespace WinCertes
 {
@@ -7,6 +9,8 @@ namespace WinCertes
     /// </summary>
     class RegistryConfig : IConfig
     {
+        private static readonly ILogger _logger = LogManager.GetLogger("WinCertes.WinCertesOptions");
+
         private static string _registryKey = @"HKEY_LOCAL_MACHINE\SOFTWARE\WinCertes";
 
         /// <summary>
@@ -14,8 +18,12 @@ namespace WinCertes
         /// </summary>
         public RegistryConfig()
         {
-            if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null) {
-                Registry.LocalMachine.OpenSubKey("SOFTWARE").CreateSubKey("WinCertes");
+            try {
+                if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null) {
+                    Registry.LocalMachine.OpenSubKey("SOFTWARE").CreateSubKey("WinCertes");
+                }
+            } catch (Exception e) {
+                _logger.Error($"Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
             }
         }
 
