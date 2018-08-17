@@ -249,7 +249,7 @@ namespace WinCertes
             } catch (Exception e) { _logger.Error(e.Message); return; }
             if (_winCertesOptions.Revoke) { RevokeCert(_domains); return; }
             // default mode: enrollment/renewal. check if there's something to be done
-            // note that in any case, we want to be able to set the scheduled task
+            // note that in any case, we want to be able to set the scheduled task (won't do anything if taskName is null)
             if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return; }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service

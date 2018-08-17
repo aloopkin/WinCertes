@@ -99,16 +99,36 @@ namespace WinCertes
         {
             if (siteName == null) return false;
             try {
-                ServerManager mgr = new ServerManager();
-                Site site = mgr.Sites[siteName];
-                Binding binding = site.Bindings.Add("*:443", certificate.GetCertHash(), "MY");
+                RemoveHTTPSBindingFromIISSite(siteName);
+                ServerManager serverMgr = new ServerManager();
+                Site site = serverMgr.Sites[siteName];
+                Binding binding = site.Bindings.Add("*:443:", certificate.GetCertHash(), "MY");
                 binding.Protocol = "https";
-                mgr.CommitChanges();
+                site.ApplicationDefaults.EnabledProtocols = "http,https";
+                serverMgr.CommitChanges();
                 return true;
             } catch (Exception e) {
                 logger.Error($"Could not bind certificate to site {siteName}: {e.Message}");
+                logger.Debug(e);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Removes the HTTPS Binding from the specified IIS Site 
+        /// </summary>
+        /// <param name="siteName"></param>
+        private static void RemoveHTTPSBindingFromIISSite(string siteName)
+        {
+            ServerManager serverMgr = new ServerManager();
+            Site site = serverMgr.Sites[siteName];
+            for (int i = 0; i < site.Bindings.Count; i++) {
+                if (site.Bindings[i].Protocol.Equals("https")) {
+                    site.Bindings.RemoveAt(i);
+                    break;
+                }
+            }
+            serverMgr.CommitChanges();
         }
 
         /// <summary>
