@@ -106,7 +106,7 @@ The PFX can then be parsed using e.g. [Get-PfxData](https://docs.microsoft.com/e
 re-exported with different pasword, or imported within a different Windows store.
 
 The following code is a simple example of PowerShell script that you can call from WinCertes:
-```PS
+```PowerShell
 Param(
                 [Parameter(Mandatory=$True,Position=1)]
                 [string]$pfx,
