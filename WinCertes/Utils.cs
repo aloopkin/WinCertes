@@ -109,7 +109,6 @@ namespace WinCertes
                 return true;
             } catch (Exception e) {
                 logger.Error($"Could not bind certificate to site {siteName}: {e.Message}");
-                logger.Debug(e);
                 return false;
             }
         }
