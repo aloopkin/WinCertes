@@ -1,11 +1,7 @@
 ﻿using NLog;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace WinCertes
 {
@@ -65,9 +61,7 @@ namespace WinCertes
         /// <summary>
         /// Imports PFX into specified CSP/KSP
         /// </summary>
-        /// <param name="pfxFullPath"></param>
-        /// <param name="pfxPassword"></param>
-        /// <param name="KSP"></param>
+        /// <param name="KSP">the CSP/KSP name</param>
         public void ImportPFXIntoKSP(string KSP)
         {
             try {
@@ -97,7 +91,7 @@ namespace WinCertes
         /// <summary>
         /// Imports the certificate into the specified CSP, or into default one if csp parameter is null
         /// </summary>
-        /// <param name="csp">the name of the csp to import certificate</param>
+        /// <param name="csp">the name of the csp/ksp to import certificate</param>
         public void ImportCertificateIntoCSP(string csp = null)
         {
             if (csp == null) {

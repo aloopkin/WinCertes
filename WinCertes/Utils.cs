@@ -4,8 +4,6 @@ using NLog.Config;
 using NLog.Targets;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
@@ -13,7 +11,6 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Text;
-using System.Threading;
 using TS = Microsoft.Win32.TaskScheduler;
 
 
@@ -236,15 +233,20 @@ namespace WinCertes
         /// <returns>the certificate, or null if not found</returns>
         public static X509Certificate2 GetCertificateBySerial(string serial)
         {
-            X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadOnly);
-            X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySerialNumber, serial, false);
-            store.Close();
-            if (collection.Count == 0) {
+            try {
+                X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.ReadOnly);
+                X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySerialNumber, serial, false);
+                store.Close();
+                if (collection.Count == 0) {
+                    return null;
+                } else {
+                    X509Certificate2 cert = collection[0];
+                    return cert;
+                }
+            } catch (Exception e) {
+                logger.Error($"Could not retrieve certificate from store: {e.Message}");
                 return null;
-            } else {
-                X509Certificate2 cert = collection[0];
-                return cert;
             }
         }
     }

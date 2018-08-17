@@ -164,8 +164,8 @@ namespace WinCertes
                 _logger.Error($"Could not find certificate matching serial {serial}. Please check the Certificate Store");
                 return;
             }
-            var revRes = Task.Run(() => _certesWrapper.RevokeCertificate(cert)).GetAwaiter().GetResult();
-            if (revRes) {
+            // Here we revoke from ACME Service. Note that any error is already handled into the wrapper
+            if (Task.Run(() => _certesWrapper.RevokeCertificate(cert)).GetAwaiter().GetResult()) {
                 _config.DeleteParameter("CertExpDate" + Utils.DomainsToHostId(domains));
                 _config.DeleteParameter("CertSerial" + Utils.DomainsToHostId(domains));
                 X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
@@ -177,7 +177,7 @@ namespace WinCertes
         }
 
         /// <summary>
-        /// Initializes WinCertes Directory path
+        /// Initializes WinCertes Directory path on the filesystem
         /// </summary>
         private static void InitWinCertesDirectoryPath()
         {
@@ -248,6 +248,8 @@ namespace WinCertes
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
             } catch (Exception e) { _logger.Error(e.Message); return; }
             if (_winCertesOptions.Revoke) { RevokeCert(_domains); return; }
+            // default mode: enrollment/renewal. check if there's something to be done
+            // note that in any case, we want to be able to set the scheduled task
             if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return; }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service

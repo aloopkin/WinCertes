@@ -95,6 +95,16 @@ By default, WinCertes uses Let's Encrypt (LE) CA to issue SSL certificates. Howe
 2. You want to use another public CA: add `-s https://public-ca-acmev2.example.com` to the command line
 3. You want to use an internal ACMEv2 compliant CA: deploy the internal CA certificates to the Windows Trusted CA store, and add `-s https://internal-ca-acmev2.example.corp` to the command line
 
+About PowerShell Scripting
+-------------
+
+WinCertes gives the option to launch a PowerShell script upon successfull enrollment. This script will receive two parameters:
+- pfx: contains the full path to the PFX (PKCS#12) file
+- pfwPassword: contains the password required to parse the PFX
+
+The PFX can then be parsed using e.g. [Get-PfxData](https://docs.microsoft.com/en-us/powershell/module/pkiclient/get-pfxdata), and later on 
+re-exported with different pasword, or imported within a different Windows store.
+
 
 
 [![BCH compliance](https://bettercodehub.com/edge/badge/aloopkin/WinCertes?branch=master)](https://bettercodehub.com/)
