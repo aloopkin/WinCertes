@@ -8,7 +8,7 @@ namespace WinCertes.ChallengeValidator
 {
     class HTTPChallengeWebServerValidator : IHTTPChallengeValidator
     {
-        private static readonly ILogger logger = LogManager.GetLogger("HTTPChallengeWebServerValidator");
+        private static readonly ILogger logger = LogManager.GetLogger("WinCertes.ChallengeValidator.HTTPChallengeWebServerValidator");
         private Thread _serverThread;
         private HttpListener _listener;
         private string _tokenContents;
@@ -53,10 +53,14 @@ namespace WinCertes.ChallengeValidator
         /// </summary>
         public HTTPChallengeWebServerValidator()
         {
-            _serverThread = new Thread(this.Listen) {
-                IsBackground = true
-            };
-            _serverThread.Start();
+            try {
+                _serverThread = new Thread(this.Listen) {
+                    IsBackground = true
+                };
+                _serverThread.Start();
+            } catch (Exception e) {
+                logger.Warn($"Could not start web server: {e.Message}.");
+            }
         }
 
         /// <summary>
@@ -64,9 +68,11 @@ namespace WinCertes.ChallengeValidator
         /// </summary>
         /// <param name="token"></param>
         /// <param name="keyAuthz"></param>
-        public void PrepareChallengeForValidation(string token, string keyAuthz)
+        public bool PrepareChallengeForValidation(string token, string keyAuthz)
         {
             _tokenContents = keyAuthz;
+            if (_serverThread != null) return true;
+            return false;
         }
 
         /// <summary>

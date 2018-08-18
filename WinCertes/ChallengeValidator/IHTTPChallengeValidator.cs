@@ -10,7 +10,7 @@
         /// </summary>
         /// <param name="token">challenge token</param>
         /// <param name="keyAuthz">challenge token value (authorization key)</param>
-        void PrepareChallengeForValidation(string token, string keyAuthz);
+        bool PrepareChallengeForValidation(string token, string keyAuthz);
 
         /// <summary>
         /// Cleanup everything, once challenge validation has been performed by ACME Service.

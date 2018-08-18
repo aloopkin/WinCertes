@@ -28,7 +28,7 @@ namespace WinCertes
     public class CertesWrapper
     {
         public string PfxPassword { get; set; }
-        private static readonly ILogger logger = LogManager.GetLogger("CertesWrapper");
+        private static readonly ILogger logger = LogManager.GetLogger("WinCertes.CertesWrapper");
         private IConfig _config;
         private CertesSettings _settings;
         private AcmeContext _acme;
@@ -181,7 +181,7 @@ namespace WinCertes
             if (httpChallengeStatus.Status == ChallengeStatus.Invalid) throw new Exception("HTTP challenge has an invalid status");
 
             // Else we start the challenge validation
-            challengeValidator.PrepareChallengeForValidation(httpChallenge.Token, httpChallenge.KeyAuthz);
+            if (!challengeValidator.PrepareChallengeForValidation(httpChallenge.Token, httpChallenge.KeyAuthz)) return false;
 
             // Now let's ping the ACME service to validate the challenge token
             Challenge challengeRes = await httpChallenge.Validate();
