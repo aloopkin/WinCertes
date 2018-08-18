@@ -37,19 +37,7 @@ And... That's all! The certificate is requested from Let's Encrypt, and bound to
 
 Advanced users can explore the different validation modes, deployment modes and other advanced options.
 
-Development & Bug Reporting
--------------
-
-If you have a bug or feature and you can fix the problem yourself please just:
-
-   1. File a new issue
-   2. Fork the repository
-   2. Make your changes 
-   3. Submit a pull request, detailing the problem being solved and testing steps/evidence
-   
-If you cannot provide a fix for the problem yourself, please file an issue and describe the fault with steps to reproduce.
-
-The development requires Visual Studio 2017, and Wix if you want to build the installer.
+*Important Note*: see below for required IIS configuration, if you use IIS.
 
 Command Line Options
 -------------
@@ -140,6 +128,20 @@ This can be done:
     </system.webServer>
 </configuration>
 ```
+
+Development & Bug Reporting
+-------------
+
+If you have a bug or feature and you can fix the problem yourself please just:
+
+   1. File a new issue
+   2. Fork the repository
+   2. Make your changes 
+   3. Submit a pull request, detailing the problem being solved and testing steps/evidence
+   
+If you cannot provide a fix for the problem yourself, please file an issue and describe the fault with steps to reproduce.
+
+The development requires Visual Studio 2017, and Wix if you want to build the installer.
 
 
 [![BCH compliance](https://bettercodehub.com/edge/badge/aloopkin/WinCertes?branch=master)](https://bettercodehub.com/)
