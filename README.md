@@ -120,6 +120,26 @@ $mypfx = Get-PfxData -FilePath $pfx -Password $mypwd
 $mypfx.EndEntityCertificates.Subject | Out-File -FilePath c:\temp\test.txt -Append
 ```
 
+About IIS Configuration
+-------------
+
+WinCertes can auto-configure IIS regarding the SSL certificate and its bindings. However, IIS configuration needs to be modified in order for 
+WinCertes HTTP validation to work: WinCertes requires the "*" mimetype to be set, else IIS will refuse to serve the challenge file.
+
+This can be done:
+- using the IIS Management Console, in the "MIME Types" section
+- or by adding/modifying the web.config file at the document root of IIS, with the following content:
+
+```XML
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <system.webServer>
+        <staticContent>
+            <mimeMap fileExtension=".*" mimeType="application/octet-stream" />
+        </staticContent>
+    </system.webServer>
+</configuration>
+```
 
 
 [![BCH compliance](https://bettercodehub.com/edge/badge/aloopkin/WinCertes?branch=master)](https://bettercodehub.com/)
