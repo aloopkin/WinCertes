@@ -37,8 +37,6 @@ And... That's all! The certificate is requested from Let's Encrypt, and bound to
 
 Advanced users can explore the different validation modes, deployment modes and other advanced options.
 
-*Important Note*: see below for required IIS configuration, if you use IIS.
-
 Command Line Options
 -------------
 
@@ -113,8 +111,9 @@ About IIS Configuration
 
 WinCertes can auto-configure IIS regarding the SSL certificate and its bindings. However, IIS configuration needs to be modified in order for 
 WinCertes HTTP validation to work: WinCertes requires the "*" mimetype to be set, else IIS will refuse to serve the challenge file.
+WinCertes tries to do this automatically as well, but it might fail depending on your version and setup of IIS.
 
-This can be done:
+It is possible to fix the issue permanently:
 - using the IIS Management Console, in the "MIME Types" section
 - or by adding/modifying the web.config file at the document root of IIS, with the following content:
 
