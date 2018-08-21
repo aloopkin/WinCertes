@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NLog;
+using System.Net;
+using System.Net.NetworkInformation;
 
 namespace WinCertes.ChallengeValidator
 {
     public class HTTPChallengeValidatorFactory
     {
+        private static readonly ILogger logger = LogManager.GetLogger("WinCertes.ChallengeValidator.HTTPChallengeValidatorFactory");
+
         /// <summary>
         /// Builds the HTTP Challenge Validator. It will also initialise them.
         /// </summary>
@@ -18,11 +18,27 @@ namespace WinCertes.ChallengeValidator
         {
             IHTTPChallengeValidator challengeValidator = null;
             if (standalone) {
+                if (!CheckAvailableServerPort(80)) return null;
                 challengeValidator = new HTTPChallengeWebServerValidator();
             } else if (webRoot != null) {
                 challengeValidator = new HTTPChallengeFileValidator(webRoot);
             }
             return challengeValidator;
+        }
+
+        private static bool CheckAvailableServerPort(int port)
+        {
+            bool isAvailable = true;
+            IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+            IPEndPoint[] tcpConnInfoArray = ipGlobalProperties.GetActiveTcpListeners();
+            foreach (IPEndPoint endpoint in tcpConnInfoArray) {
+                if (endpoint.Port == port) {
+                    isAvailable = false;
+                    break;
+                }
+            }
+            if (!isAvailable) logger.Error($"Impossible to bind on port {port}. A program is probably already listening on it.");
+            return isAvailable;
         }
     }
 }

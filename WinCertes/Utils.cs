@@ -242,7 +242,8 @@ namespace WinCertes
             if (domains.Count == 0) {
                 return "WinCertes";
             }
-            return domains[0].Replace(@"*", "").Replace("-", "").Replace(":", "").Substring(0, 16);
+            string friendly = domains[0].Replace(@"*", "").Replace("-", "").Replace(":", "");
+            return friendly.Substring(0,friendly.IndexOf("."));
         }
 
         /// <summary>

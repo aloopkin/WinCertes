@@ -211,7 +211,22 @@ namespace WinCertes
         /// <returns>PEM chain of local computer's CA certificates</returns>
         public byte[] GetCACertChainFromStore()
         {
-            X509Store store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
+            string pemBundle = "";
+
+            pemBundle += DumpStoreContentsAsPEMBundle(StoreName.Root);
+            pemBundle += DumpStoreContentsAsPEMBundle(StoreName.CertificateAuthority);
+
+            return Encoding.UTF8.GetBytes(pemBundle);
+        }
+
+        /// <summary>
+        /// Dumps the contents of a windows certificate store as a PEM bundle
+        /// </summary>
+        /// <param name="name">the store name</param>
+        /// <returns>the PEM bundle, as a string</returns>
+        private string DumpStoreContentsAsPEMBundle(StoreName name)
+        {
+            X509Store store = new X509Store(name, StoreLocation.LocalMachine);
             store.Open(OpenFlags.ReadOnly);
             var chain = "";
             X509Certificate2Collection certsW = store.Certificates.Find(X509FindType.FindByKeyUsage, X509KeyUsageFlags.KeyCertSign, true);
@@ -224,7 +239,8 @@ namespace WinCertes
                 chain += builder.ToString();
             }
             store.Close();
-            return Encoding.UTF8.GetBytes(chain);
+
+            return chain;
         }
 
         /// <summary>

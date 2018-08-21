@@ -15,17 +15,21 @@ namespace WinCertes.ChallengeValidator
 
         private void Listen()
         {
-            _listener = new HttpListener();
-            _listener.Prefixes.Add("http://*:80/");
-            _listener.Start();
-            logger.Debug("Started Listener on port 80");
-            while (true) {
-                try {
-                    HttpListenerContext context = _listener.GetContext();
-                    Process(context);
-                } catch (Exception) {
-                    // ignore error, as thread abort will generate one anyway
+            try {
+                _listener = new HttpListener();
+                _listener.Prefixes.Add("http://*:80/");
+                _listener.Start();
+                logger.Debug("Started Listener on port 80");
+                while (true) {
+                    try {
+                        HttpListenerContext context = _listener.GetContext();
+                        Process(context);
+                    } catch (Exception) {
+                        // ignore error, as thread abort will generate one anyway
+                    }
                 }
+            } catch (Exception e) {
+                logger.Error($"Could not start to listen on port 80: {e.Message}");
             }
         }
 
