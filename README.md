@@ -79,7 +79,7 @@ Using Non-Let's Encrypt CA
 By default, WinCertes uses Let's Encrypt (LE) CA to issue SSL certificates. However there are several cases in which one would like to use another CA:
 1. You're testing the certificate deployment for LE: add `-s https://acme-staging-v02.api.letsencrypt.org/directory` to the command line
 2. You want to use another public CA: add `-s https://public-ca-acmev2.example.com` to the command line
-3. You want to use an internal ACMEv2 compliant CA: deploy the internal CA certificates to the Windows Trusted CA store, and add `-s https://internal-ca-acmev2.example.corp` to the command line
+3. You want to use an internal ACMEv2 compliant CA: deploy the internal CA certificates to the Windows Trusted CA store, and add `-s https://internal-ca-acmev2.example.corp` to the command line. If you need a solution to give ACMEv2 capabilities to your internal PKI, you can check e.g. [EverTrust TAP](https://evertrust.fr/en/products/).
 
 About PowerShell Scripting
 -------------
@@ -100,9 +100,11 @@ Param(
                 [string]$pfxPassword
                 )
 
+# Build the pfx object using file path and password
 $mypwd = ConvertTo-SecureString -String $pfxPassword -Force -AsPlainText
 $mypfx = Get-PfxData -FilePath $pfx -Password $mypwd
 
+# Start the real work. Here we simply append the certificate DN to a text file
 $mypfx.EndEntityCertificates.Subject | Out-File -FilePath c:\temp\test.txt -Append
 ```
 
