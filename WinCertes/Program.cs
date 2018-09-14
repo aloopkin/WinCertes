@@ -259,7 +259,7 @@ namespace WinCertes
             challengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
-            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains[0], _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
+            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
             if (pfxName == null) return;
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, (_winCertesOptions.Csp == null));

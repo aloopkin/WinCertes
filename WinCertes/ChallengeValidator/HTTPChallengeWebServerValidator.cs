@@ -29,7 +29,7 @@ namespace WinCertes.ChallengeValidator
                     }
                 }
             } catch (Exception e) {
-                logger.Error($"Could not start to listen on port 80: {e.Message}");
+                if (!e.Message.Equals("Thread was being aborted.")) logger.Error($"Could not start to listen on port 80: {e.Message}");
             }
         }
 

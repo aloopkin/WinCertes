@@ -250,7 +250,7 @@ namespace WinCertes
         /// <param name="pathForPfx">Path where the resulting PFX/PKCS#12 file will be generated</param>
         /// <param name="pfxFriendlyName">Friendly name for the resulting PFX/PKCS#12</param>
         /// <returns>The name of the generated PFX/PKCS#12 file, or null in case of error</returns>
-        public async Task<string> RetrieveCertificate(string commonName, string pathForPfx, string pfxFriendlyName)
+        public async Task<string> RetrieveCertificate(IList<string> domains, string pathForPfx, string pfxFriendlyName)
         {
             try {
                 if (_orderCtx == null) throw new Exception("Do not call RetrieveCertificate before RegisterNewOrderAndVerify");
@@ -261,7 +261,8 @@ namespace WinCertes
                 IKey certKey = KeyFactory.NewKey(KeyAlgorithm.RS256);
                 // Then let's generate the CSR
                 var csr = await _orderCtx.CreateCsr(certKey);
-                csr.AddName("CN", commonName);
+                csr.AddName("CN", domains[0]);
+                csr.SubjectAlternativeNames = domains;
 
                 // and finalize the ACME order
                 var finalOrder = await _orderCtx.Finalize(csr.Generate());
