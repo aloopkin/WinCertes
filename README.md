@@ -12,7 +12,7 @@ Features:
 - Easy certificate requests & automated SSL bindings
 - Auto renewal using Scheduled Task
 - SAN support (multi-domain certificates)
-- Support for v2 of the Let's Encrypt API including Wildcard Certificate support (*.example.com) [*]
+- Support for v2 of the Let's Encrypt API including Wildcard Certificate support (\*.example.com) [\*]
 - Optional powershell scripting for advanced deployment (Exchange, multi-server, etc)
 - Http only challenge validation.
 	- Built-in Http Challenge Server for easier configuration of challenge responses
@@ -24,7 +24,7 @@ Features:
 - Support for certificate revocation
 - Logs activity to STDOUT and file
 
-[*] Warning: Let's Encrypt does not allow wildcard certificates issuance with HTTP validation. So, while WinCertes supports it, it won't work with Let's Encrypt (but it might work with other CAs).
+[\*] Warning: Let's Encrypt does not allow wildcard certificates issuance with HTTP validation. So, while WinCertes supports it, it won't work with Let's Encrypt (but it might work with other CAs).
 
 ----------
 Quick Start (IIS users)
