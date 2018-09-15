@@ -12,7 +12,7 @@ Features:
 - Easy certificate requests & automated SSL bindings
 - Auto renewal using Scheduled Task
 - SAN support (multi-domain certificates)
-- Support for v2 of the Let's Encrypt API including Wildcard Certificate support (\*.example.com) [\*]
+- Full support for ACMEv2, including Wildcard Certificate support (\*.example.com) [\*]
 - Optional powershell scripting for advanced deployment (Exchange, multi-server, etc)
 - Http only challenge validation.
 	- Built-in Http Challenge Server for easier configuration of challenge responses
