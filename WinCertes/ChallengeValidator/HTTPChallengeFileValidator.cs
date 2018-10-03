@@ -21,7 +21,9 @@ namespace WinCertes.ChallengeValidator
         {
             _challengeVerifyPath = challengeVerifyPath;
             string webConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<configuration>\n<system.webServer>\n<staticContent>"
-                 + "<mimeMap fileExtension=\".*\" mimeType=\"application/octet-stream\"/>\n</staticContent>\n</system.webServer>\n</configuration>";
+                 + "<mimeMap fileExtension=\".*\" mimeType=\"application/octet-stream\"/>\n"
+                 + "<mimeMap fileExtension=\".\" mimeType=\"application/octet-stream\"/>\n"
+                 + "</staticContent>\n</system.webServer>\n</configuration>";
             try {
                 // First we create necessary directories
                 System.IO.Directory.CreateDirectory($"{_challengeVerifyPath}\\.well-known");
