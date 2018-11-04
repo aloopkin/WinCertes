@@ -1,6 +1,6 @@
 # WinCertes - ACME Client for Windows
 
-WinCertes is a simple ACMEv2 Client for Windows, able to manage the automatic issuance and renewal of SSL Certificates, for IIS or other web servers. It is based on [Certes](https://github.com/fszlin/certes) Library
+WinCertes is a simple ACMEv2 Client for Windows, able to manage the automatic issuance and renewal of SSL Certificates, for IIS or other web servers. It is based on [Certes](https://github.com/fszlin/certes) Library. Pre-compiled binaries are available from GitHub (just look for the standard GitHub menu entry).
 
 ![GPLv3 License](https://www.gnu.org/graphics/gplv3-88x31.png)
 
