@@ -127,6 +127,7 @@ It is possible to fix the issue permanently:
     <system.webServer>
         <staticContent>
             <mimeMap fileExtension=".*" mimeType="application/octet-stream" />
+            <mimeMap fileExtension="." mimeType="application/octet-stream" />
         </staticContent>
     </system.webServer>
 </configuration>
