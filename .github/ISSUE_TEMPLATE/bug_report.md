@@ -18,7 +18,7 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Screenshots or Logs**
-If applicable, add screenshots or logs to help explain your problem.
+If applicable, add screenshots or logs to help explain your problem. Please use the "Debug" version to provide logs.
 
 **Desktop (please complete the following information):**
  - OS: [e.g. Windows Server]
