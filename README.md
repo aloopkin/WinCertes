@@ -133,6 +133,19 @@ It is possible to fix the issue permanently:
 </configuration>
 ```
 
+Troubleshooting
+-------------
+
+Usually when the enrollment fails you can get more information by opening the link in the latest error message given by WinCertes. Most of the time it should look like:
+```
+Failed to register and validate order with CA: Could not validate challenge https://acme-staging-v02.api.letsencrypt.org/acme/challenge/[challenge_removed]
+```
+Most common causes are:
+- When using the "standalone" mode (`-a` switch), the Windows Firewall gets in the way. Try to fully deactivate it.
+- When not using the "standalone" mode, the Web Server document root is not specified correctly: use the `-w` switch.
+- You made too many tests on the LE production server. Remember to add `-s https://acme-staging-v02.api.letsencrypt.org/directory` to the command line when you test the enrollment!
+
+
 Development & Bug Reporting
 -------------
 
