@@ -254,7 +254,7 @@ namespace WinCertes
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
             IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
-            if (challengeValidator == null) return;
+            if ((challengeValidator == null) && (_config.ReadStringParameter("DNSServerURL") == null)) return;
             if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, challengeValidator)).GetAwaiter().GetResult())) { challengeValidator.EndAllChallengeValidations(); return; }
             challengeValidator.EndAllChallengeValidations();
 

@@ -4,6 +4,7 @@ using Certes.Acme.Resource;
 using NLog;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -123,9 +124,9 @@ namespace WinCertes
         /// This method manages automatically the creation of necessary directory and files.
         /// </summary>
         /// <remarks>
-        /// The ACME directory will access to http://__domain__/.well-known/acme-challenge/token, that should be served by a local web server
-        /// when not using built-in, and translated into local path {challengeVerifyPath}\.well-known\acme-challenge\token.
-        /// Important Note: currently WinCertes supports only http-01 validation mode.
+        /// When using HTTP Validation, the ACME directory will access to http://__domain__/.well-known/acme-challenge/token, that should be served 
+        /// by a local web server when not using built-in, and translated into local path {challengeVerifyPath}\.well-known\acme-challenge\token.
+        /// Important Note: currently WinCertes supports only http-01 validation mode, and dns-01 validation mode with limitations.
         /// </remarks>
         /// <param name="domains">The list of domains to be registered and validated</param>
         /// <param name="challengeValidator">The object used for challenge validation</param>
@@ -150,12 +151,19 @@ namespace WinCertes
                     var allChallenges = await authz.Challenges();
                     // Not sure if it's useful...
                     var res = await authz.Resource();
-                    // Get the HTTP challenge
-                    var httpChallenge = await authz.Http();
-                    if (httpChallenge != null) {
-                        var resValidation = await ValidateChallenge(httpChallenge, challengeValidator);
-                        if (!resValidation) throw new Exception($"Could not validate challenge {httpChallenge.Location.ToString()}");
-                    } else throw new Exception("Only HTTP challenges are supported for now");
+                    if (_config.ReadStringParameter("DNSServerURL") != null) {
+                        // Get the DNS challenge
+                        var dnsChallenge = await authz.Dns();
+                        var resValidation = await ValidateDNSChallenge(dnsChallenge);
+                        if (!resValidation) throw new Exception($"Could not validate challenge {dnsChallenge.Location.ToString()}");
+                    } else { 
+                        // Get the HTTP challenge
+                        var httpChallenge = await authz.Http();
+                        if (httpChallenge != null) {
+                            var resValidation = await ValidateChallenge(httpChallenge, challengeValidator);
+                            if (!resValidation) throw new Exception($"Could not validate challenge {httpChallenge.Location.ToString()}");
+                        } else throw new Exception("Only HTTP challenges are supported for now");
+                    }
                 }
                 // If we are here, it means order was properly created, and authorizations & challenges were properly verified.
                 logger.Info($"Generated orders and validated challenges for domains: {String.Join(",", domains)}");
@@ -164,6 +172,65 @@ namespace WinCertes
                 logger.Error($"Failed to register and validate order with CA: {ProcessCertesException(exp)}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Validates a DNS challenge. Similar to HTTP Validation, but different because of DNSChallenge value which is signed by account key
+        /// </summary>
+        /// <param name="dnsChallenge"></param>
+        /// <returns></returns>
+        private async Task<bool> ValidateDNSChallenge(IChallengeContext dnsChallenge)
+        {
+            if (dnsChallenge == null) throw new Exception("DNS Validation mode setup, but server returned no DNS challenge.");
+            // We get the resource fresh
+            var dnsChallengeStatus = await dnsChallenge.Resource();
+
+            // If it's invalid, we stop right away. Should not happen, but anyway...
+            if (dnsChallengeStatus.Status == ChallengeStatus.Invalid) throw new Exception("DNS challenge has an invalid status");
+
+            // Let's prepare for ACME-DNS validation
+            var dnsValue = _acme.AccountKey.DnsTxt(dnsChallenge.Token);
+            bool resPrep = await PrepareDNSChallengeForValidation(dnsValue);
+            if (!resPrep) return false;
+
+            // Now let's ping the ACME service to validate the challenge token
+            Challenge challengeRes = await dnsChallenge.Validate();
+
+            // We need to loop, because ACME service might need some time to validate the challenge token
+            int retry = 0;
+            while (((challengeRes.Status == ChallengeStatus.Pending) || (challengeRes.Status == ChallengeStatus.Processing)) && (retry < 10)) {
+                // We sleep 2 seconds between each request, to leave time to ACME service to refresh
+                System.Threading.Thread.Sleep(2000);
+                // We refresh the challenge object from ACME service
+                challengeRes = await dnsChallenge.Resource();
+                retry++;
+            }
+
+            // If challenge is Invalid, Pending or Processing, something went wrong...
+            if (challengeRes.Status != ChallengeStatus.Valid) return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Prepare for DNS validation using the ACME-DNS protocol.
+        /// </summary>
+        /// <param name="dnsValue"></param>
+        /// <returns></returns>
+        private async Task<bool> PrepareDNSChallengeForValidation(String dnsValue)
+        {
+            var DNSServerURL = _config.ReadStringParameter("DNSServerURL");
+            var DNSServerUser = _config.ReadStringParameter("DNSServerUser");
+            var DNSServerKey = _config.ReadStringParameter("DNSServerKey");
+            var DNSServerSubDomain = _config.ReadStringParameter("DNSServerSubDomain");
+
+            HttpClient client = new HttpClient();
+            var content = new StringContent($"{{ \"subdomain\": \"{DNSServerSubDomain}\", \"txt\": \"{dnsValue}\" }}", Encoding.UTF8, "application/json");
+            content.Headers.Add("X-Api-User", DNSServerUser);
+            content.Headers.Add("X-Api-Key", DNSServerKey);
+
+            var response = await client.PostAsync(DNSServerURL, content);
+            return (response.StatusCode == System.Net.HttpStatusCode.OK);
         }
 
         /// <summary>
