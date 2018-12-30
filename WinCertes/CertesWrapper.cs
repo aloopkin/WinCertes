@@ -147,23 +147,7 @@ namespace WinCertes
                 // Looping through authorizations
                 foreach (IAuthorizationContext authz in orderAuthz) {
                     InitCertes();
-                    // For each authorization, get the challenges
-                    var allChallenges = await authz.Challenges();
-                    // Not sure if it's useful...
-                    var res = await authz.Resource();
-                    if (_config.ReadStringParameter("DNSServerURL") != null) {
-                        // Get the DNS challenge
-                        var dnsChallenge = await authz.Dns();
-                        var resValidation = await ValidateDNSChallenge(dnsChallenge);
-                        if (!resValidation) throw new Exception($"Could not validate challenge {dnsChallenge.Location.ToString()}");
-                    } else { 
-                        // Get the HTTP challenge
-                        var httpChallenge = await authz.Http();
-                        if (httpChallenge != null) {
-                            var resValidation = await ValidateChallenge(httpChallenge, challengeValidator);
-                            if (!resValidation) throw new Exception($"Could not validate challenge {httpChallenge.Location.ToString()}");
-                        } else throw new Exception("Only HTTP challenges are supported for now");
-                    }
+                    await ValidateAuthz(authz, challengeValidator);
                 }
                 // If we are here, it means order was properly created, and authorizations & challenges were properly verified.
                 logger.Info($"Generated orders and validated challenges for domains: {String.Join(",", domains)}");
@@ -171,6 +155,33 @@ namespace WinCertes
             } catch (Exception exp) {
                 logger.Error($"Failed to register and validate order with CA: {ProcessCertesException(exp)}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Validates an Authorization, switching between DNS and HTTP challenges
+        /// </summary>
+        /// <param name="authz"></param>
+        /// <param name="challengeValidator"></param>
+        /// <returns></returns>
+        private async Task ValidateAuthz(IAuthorizationContext authz,IHTTPChallengeValidator challengeValidator)
+        {
+            // For each authorization, get the challenges
+            var allChallenges = await authz.Challenges();
+            // Not sure if it's useful...
+            var res = await authz.Resource();
+            if (_config.ReadStringParameter("DNSServerURL") != null) {
+                // Get the DNS challenge
+                var dnsChallenge = await authz.Dns();
+                var resValidation = await ValidateDNSChallenge(dnsChallenge);
+                if (!resValidation) throw new Exception($"Could not validate DNS challenge {dnsChallenge.Location.ToString()}");
+            } else {
+                // Get the HTTP challenge
+                var httpChallenge = await authz.Http();
+                if (httpChallenge != null) {
+                    var resValidation = await ValidateHTTPChallenge(httpChallenge, challengeValidator);
+                    if (!resValidation) throw new Exception($"Could not validate HTTP challenge {httpChallenge.Location.ToString()}");
+                } else throw new Exception("Only HTTP challenges are supported for now");
             }
         }
 
@@ -239,7 +250,7 @@ namespace WinCertes
         /// <param name="httpChallenge"></param>
         /// <param name="challengeValidator"></param>
         /// <returns>true if validated, false otherwise</returns>
-        private async Task<bool> ValidateChallenge(IChallengeContext httpChallenge, IHTTPChallengeValidator challengeValidator)
+        private async Task<bool> ValidateHTTPChallenge(IChallengeContext httpChallenge, IHTTPChallengeValidator challengeValidator)
         {
             // We get the resource fresh
             var httpChallengeStatus = await httpChallenge.Resource();
