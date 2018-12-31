@@ -108,7 +108,10 @@
   <ItemGroup>
     <Compile Include="CertesWrapper.cs" />
     <Compile Include="CertificateStorageManager.cs" />
+    <Compile Include="ChallengeValidator\DNSChallengeAcmeDnsValidator.cs" />
+    <Compile Include="ChallengeValidator\DNSChallengeValidatorFactory.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeValidatorFactory.cs" />
+    <Compile Include="ChallengeValidator\IDNSChallengeValidator.cs" />
     <Compile Include="Config\RegistryConfig.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeFileValidator.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeWebServerValidator.cs" />

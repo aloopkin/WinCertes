@@ -253,10 +253,11 @@ namespace WinCertes
             if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return; }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
-            IHTTPChallengeValidator challengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
-            if ((challengeValidator == null) && (_config.ReadStringParameter("DNSServerURL") == null)) return;
-            if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, challengeValidator)).GetAwaiter().GetResult())) { challengeValidator.EndAllChallengeValidations(); return; }
-            challengeValidator.EndAllChallengeValidations();
+            IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
+            IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(_config);
+            if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) return;
+            if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, httpChallengeValidator, dnsChallengeValidator)).GetAwaiter().GetResult())) { httpChallengeValidator.EndAllChallengeValidations(); return; }
+            httpChallengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();

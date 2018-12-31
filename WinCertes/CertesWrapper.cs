@@ -129,9 +129,9 @@ namespace WinCertes
         /// Important Note: currently WinCertes supports only http-01 validation mode, and dns-01 validation mode with limitations.
         /// </remarks>
         /// <param name="domains">The list of domains to be registered and validated</param>
-        /// <param name="challengeValidator">The object used for challenge validation</param>
+        /// <param name="httpChallengeValidator">The object used for challenge validation</param>
         /// <returns></returns>
-        public async Task<bool> RegisterNewOrderAndVerify(IList<string> domains, IHTTPChallengeValidator challengeValidator)
+        public async Task<bool> RegisterNewOrderAndVerify(IList<string> domains, IHTTPChallengeValidator httpChallengeValidator, IDNSChallengeValidator dnsChallengeValidator)
         {
             try {
                 // Re-init to be sure to get a fresh Nonce
@@ -147,7 +147,7 @@ namespace WinCertes
                 // Looping through authorizations
                 foreach (IAuthorizationContext authz in orderAuthz) {
                     InitCertes();
-                    await ValidateAuthz(authz, challengeValidator);
+                    await ValidateAuthz(authz, httpChallengeValidator, dnsChallengeValidator);
                 }
                 // If we are here, it means order was properly created, and authorizations & challenges were properly verified.
                 logger.Info($"Generated orders and validated challenges for domains: {String.Join(",", domains)}");
@@ -162,24 +162,23 @@ namespace WinCertes
         /// Validates an Authorization, switching between DNS and HTTP challenges
         /// </summary>
         /// <param name="authz"></param>
-        /// <param name="challengeValidator"></param>
+        /// <param name="httpChallengeValidator"></param>
         /// <returns></returns>
-        private async Task ValidateAuthz(IAuthorizationContext authz,IHTTPChallengeValidator challengeValidator)
+        private async Task ValidateAuthz(IAuthorizationContext authz,IHTTPChallengeValidator httpChallengeValidator, IDNSChallengeValidator dnsChallengeValidator)
         {
             // For each authorization, get the challenges
             var allChallenges = await authz.Challenges();
-            // Not sure if it's useful...
             var res = await authz.Resource();
             if (_config.ReadStringParameter("DNSServerURL") != null) {
                 // Get the DNS challenge
                 var dnsChallenge = await authz.Dns();
-                var resValidation = await ValidateDNSChallenge(dnsChallenge);
+                var resValidation = await ValidateDNSChallenge(res.Identifier.Value, dnsChallenge, dnsChallengeValidator);
                 if (!resValidation) throw new Exception($"Could not validate DNS challenge {dnsChallenge.Location.ToString()}");
             } else {
                 // Get the HTTP challenge
                 var httpChallenge = await authz.Http();
                 if (httpChallenge != null) {
-                    var resValidation = await ValidateHTTPChallenge(httpChallenge, challengeValidator);
+                    var resValidation = await ValidateHTTPChallenge(httpChallenge, httpChallengeValidator);
                     if (!resValidation) throw new Exception($"Could not validate HTTP challenge {httpChallenge.Location.ToString()}");
                 } else throw new Exception("Only HTTP challenges are supported for now");
             }
@@ -190,7 +189,7 @@ namespace WinCertes
         /// </summary>
         /// <param name="dnsChallenge"></param>
         /// <returns></returns>
-        private async Task<bool> ValidateDNSChallenge(IChallengeContext dnsChallenge)
+        private async Task<bool> ValidateDNSChallenge(String domain, IChallengeContext dnsChallenge, IDNSChallengeValidator dnsChallengeValidator)
         {
             if (dnsChallenge == null) throw new Exception("DNS Validation mode setup, but server returned no DNS challenge.");
             // We get the resource fresh
@@ -201,8 +200,8 @@ namespace WinCertes
 
             // Let's prepare for ACME-DNS validation
             var dnsValue = _acme.AccountKey.DnsTxt(dnsChallenge.Token);
-            bool resPrep = await PrepareDNSChallengeForValidation(dnsValue);
-            if (!resPrep) return false;
+            var dnsKey = $"_acme-challenge.{domain}".Replace("*.", "");
+            if (!dnsChallengeValidator.PrepareChallengeForValidation(dnsKey, dnsValue)) return false;
 
             // Now let's ping the ACME service to validate the challenge token
             Challenge challengeRes = await dnsChallenge.Validate();
@@ -223,26 +222,6 @@ namespace WinCertes
             return true;
         }
 
-        /// <summary>
-        /// Prepare for DNS validation using the ACME-DNS protocol.
-        /// </summary>
-        /// <param name="dnsValue"></param>
-        /// <returns></returns>
-        private async Task<bool> PrepareDNSChallengeForValidation(String dnsValue)
-        {
-            var DNSServerURL = _config.ReadStringParameter("DNSServerURL");
-            var DNSServerUser = _config.ReadStringParameter("DNSServerUser");
-            var DNSServerKey = _config.ReadStringParameter("DNSServerKey");
-            var DNSServerSubDomain = _config.ReadStringParameter("DNSServerSubDomain");
-
-            HttpClient client = new HttpClient();
-            var content = new StringContent($"{{ \"subdomain\": \"{DNSServerSubDomain}\", \"txt\": \"{dnsValue}\" }}", Encoding.UTF8, "application/json");
-            content.Headers.Add("X-Api-User", DNSServerUser);
-            content.Headers.Add("X-Api-Key", DNSServerKey);
-
-            var response = await client.PostAsync(DNSServerURL, content);
-            return (response.StatusCode == System.Net.HttpStatusCode.OK);
-        }
 
         /// <summary>
         /// Small method that validates one challenge using the specified validator
