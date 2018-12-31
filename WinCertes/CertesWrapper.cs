@@ -172,16 +172,26 @@ namespace WinCertes
             if (_config.ReadStringParameter("DNSServerURL") != null) {
                 // Get the DNS challenge
                 var dnsChallenge = await authz.Dns();
-                var resValidation = await ValidateDNSChallenge(res.Identifier.Value, dnsChallenge, dnsChallengeValidator);
-                if (!resValidation) throw new Exception($"Could not validate DNS challenge {dnsChallenge.Location.ToString()}");
+                if (dnsChallenge != null) {
+                    var resValidation = await ValidateDNSChallenge(res.Identifier.Value, dnsChallenge, dnsChallengeValidator);
+                    if (!resValidation) throw new Exception($"Could not validate DNS challenge:\n {RetrieveChallengeContents(dnsChallenge.Location.ToString())}");
+                } else throw new Exception("DNS Challenge Validation set up, but server sent no DNS Challenge");
             } else {
                 // Get the HTTP challenge
                 var httpChallenge = await authz.Http();
                 if (httpChallenge != null) {
                     var resValidation = await ValidateHTTPChallenge(httpChallenge, httpChallengeValidator);
-                    if (!resValidation) throw new Exception($"Could not validate HTTP challenge {httpChallenge.Location.ToString()}");
-                } else throw new Exception("Only HTTP challenges are supported for now");
+                    if (!resValidation) throw new Exception($"Could not validate HTTP challenge:\n {RetrieveChallengeContents(httpChallenge.Location.ToString())}");
+                } else throw new Exception("HTTP Challenge Validation set up, but server sent no HTTP Challenge");
             }
+        }
+
+        private String RetrieveChallengeContents(String URI)
+        {
+            HttpClient client = new HttpClient();
+            var response = client.GetAsync(URI).Result;
+            if (response.StatusCode != System.Net.HttpStatusCode.OK) throw new Exception($"Could not retrieve challenge at: {URI}");
+            return response.Content.ReadAsStringAsync().Result;
         }
 
         /// <summary>
