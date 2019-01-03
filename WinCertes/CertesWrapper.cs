@@ -153,6 +153,7 @@ namespace WinCertes
                 logger.Info($"Generated orders and validated challenges for domains: {String.Join(",", domains)}");
                 return true;
             } catch (Exception exp) {
+                logger.Debug(exp, "Error while trying to register and validate order");
                 logger.Error($"Failed to register and validate order with CA: {ProcessCertesException(exp)}");
                 return false;
             }
@@ -169,10 +170,11 @@ namespace WinCertes
             // For each authorization, get the challenges
             var allChallenges = await authz.Challenges();
             var res = await authz.Resource();
-            if (_config.ReadStringParameter("DNSServerURL") != null) {
+            if (dnsChallengeValidator != null) {
                 // Get the DNS challenge
                 var dnsChallenge = await authz.Dns();
                 if (dnsChallenge != null) {
+                    logger.Debug($"Initiating DNS Validation for {res.Identifier.Value}");
                     var resValidation = await ValidateDNSChallenge(res.Identifier.Value, dnsChallenge, dnsChallengeValidator);
                     if (!resValidation) throw new Exception($"Could not validate DNS challenge:\n {RetrieveChallengeContents(dnsChallenge.Location.ToString())}");
                 } else throw new Exception("DNS Challenge Validation set up, but server sent no DNS Challenge");
@@ -180,6 +182,7 @@ namespace WinCertes
                 // Get the HTTP challenge
                 var httpChallenge = await authz.Http();
                 if (httpChallenge != null) {
+                    logger.Debug($"Initiating HTTP Validation for {res.Identifier.Value}");
                     var resValidation = await ValidateHTTPChallenge(httpChallenge, httpChallengeValidator);
                     if (!resValidation) throw new Exception($"Could not validate HTTP challenge:\n {RetrieveChallengeContents(httpChallenge.Location.ToString())}");
                 } else throw new Exception("HTTP Challenge Validation set up, but server sent no HTTP Challenge");
