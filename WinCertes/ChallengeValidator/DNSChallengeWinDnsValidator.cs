@@ -38,16 +38,9 @@ namespace WinCertes.ChallengeValidator
         /// <returns></returns>
         public bool PrepareChallengeForValidation(string dnsKeyName, string dnsKeyValue)
         {
-
             ManagementScope mgmtScope = new ManagementScope(@"\\" + DNSServerHost + @"\Root\MicrosoftDNS");
-
-            if (DNSServerUser != null) {
-            ConnectionOptions connOpt = new ConnectionOptions();
-            connOpt.Username = DNSServerUser;
-                connOpt.Password = DNSServerPassword;
-                connOpt.Impersonation = ImpersonationLevel.Impersonate;
-                mgmtScope.Options = connOpt;
-            }
+            if (DNSServerUser != null)
+                mgmtScope.Options = LoginOptions();
             mgmtScope.Connect();
 
             string strQuery = string.Format("SELECT * FROM MicrosoftDNS_TXTType WHERE OwnerName = '{0}'", dnsKeyName);
@@ -76,6 +69,15 @@ namespace WinCertes.ChallengeValidator
                 return true;
             }
             return false;
+        }
+
+        private ConnectionOptions LoginOptions()
+        {
+            ConnectionOptions connOpt = new ConnectionOptions();
+            connOpt.Username = DNSServerUser;
+            connOpt.Password = DNSServerPassword;
+            connOpt.Impersonation = ImpersonationLevel.Impersonate;
+            return connOpt;
         }
     }
 }

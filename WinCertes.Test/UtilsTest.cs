@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Principal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using WinCertes;
 
@@ -21,6 +22,16 @@ namespace WinCertes.Tests
                 Assert.Fail();
             }
         }
+
+        [TestMethod()]
+        public void IsAdministratorTest()
+        {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            if (principal.IsInRole(WindowsBuiltInRole.Administrator) != Utils.IsAdministrator()) {
+                Assert.Fail();
+            }
+        }
     }
 }
 
@@ -37,7 +48,7 @@ namespace WinCertes.Test
             domains.Add("test2.example.com");
             domains.Sort();
             string friendlyName = Utils.DomainsToFriendlyName(domains);
-            if (!friendlyName.Equals("test.example.com")) {
+            if (!friendlyName.Equals("test")) {
                 // we're not ok
                 Assert.Fail();
             }
