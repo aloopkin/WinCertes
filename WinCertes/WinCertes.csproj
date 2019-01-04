@@ -75,6 +75,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Management.Automation.dll.10.0.10586.0\lib\net40\System.Management.Automation.dll</HintPath>
     </Reference>
@@ -110,6 +111,7 @@
     <Compile Include="CertificateStorageManager.cs" />
     <Compile Include="ChallengeValidator\DNSChallengeAcmeDnsValidator.cs" />
     <Compile Include="ChallengeValidator\DNSChallengeValidatorFactory.cs" />
+    <Compile Include="ChallengeValidator\DNSChallengeWinDnsValidator.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeValidatorFactory.cs" />
     <Compile Include="ChallengeValidator\IDNSChallengeValidator.cs" />
     <Compile Include="Config\RegistryConfig.cs" />

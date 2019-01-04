@@ -16,8 +16,12 @@ namespace WinCertes.ChallengeValidator
         public static IDNSChallengeValidator GetDNSChallengeValidator(IConfig config)
         {
             IDNSChallengeValidator challengeValidator = null;
-            if (config.ReadStringParameter("DNSServerURL")!=null) {
+            if (config.ReadStringParameter("DNSValidatorType") == null) return null;
+            if (config.ReadStringParameter("DNSValidatorType") == "acme-dns") {
                 challengeValidator = new DNSChallengeAcmeDnsValidator(config);
+            }
+            if (config.ReadStringParameter("DNSValidatorType") == "win-dns") {
+                challengeValidator = new DNSChallengeWinDnsValidator(config);
             }
             return challengeValidator;
         }
