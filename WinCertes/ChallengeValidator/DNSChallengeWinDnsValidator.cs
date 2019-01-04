@@ -39,12 +39,10 @@ namespace WinCertes.ChallengeValidator
         public bool PrepareChallengeForValidation(string dnsKeyName, string dnsKeyValue)
         {
             ManagementScope mgmtScope = new ManagementScope(@"\\" + DNSServerHost + @"\Root\MicrosoftDNS");
-            if (DNSServerUser != null)
-                mgmtScope.Options = LoginOptions();
+            if (DNSServerUser != null) mgmtScope.Options = LoginOptions();
             mgmtScope.Connect();
 
-            string strQuery = string.Format("SELECT * FROM MicrosoftDNS_TXTType WHERE OwnerName = '{0}'", dnsKeyName);
-            ManagementObjectSearcher mgmtSearch = new ManagementObjectSearcher(mgmtScope, new ObjectQuery(strQuery));
+            ManagementObjectSearcher mgmtSearch = new ManagementObjectSearcher(mgmtScope, new ObjectQuery(string.Format("SELECT * FROM MicrosoftDNS_TXTType WHERE OwnerName = '{0}'", dnsKeyName)));
             ManagementObjectCollection mgmtDNSRecords = mgmtSearch.Get();
 
             if (mgmtDNSRecords.Count >= 1) {

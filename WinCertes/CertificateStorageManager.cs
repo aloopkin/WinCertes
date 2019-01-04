@@ -5,7 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace WinCertes
 {
-    class CertificateStorageManager
+    public class CertificateStorageManager
     {
         private static readonly ILogger logger = LogManager.GetLogger("WinCertes.CertificateStorageManager");
 
