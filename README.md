@@ -161,8 +161,6 @@ If you cannot provide a fix for the problem yourself, please file an issue and d
 The development requires Visual Studio 2017, and Wix if you want to build the installer.
 
 
-[![BCH compliance](https://bettercodehub.com/edge/badge/aloopkin/WinCertes?branch=master)](https://bettercodehub.com/)
-
 
 This project is (c) 2018 Alexandre Aufrere
 
