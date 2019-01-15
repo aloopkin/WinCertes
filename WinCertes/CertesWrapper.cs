@@ -176,7 +176,7 @@ namespace WinCertes
                 if (dnsChallenge != null) {
                     logger.Debug($"Initiating DNS Validation for {res.Identifier.Value}");
                     var resValidation = await ValidateDNSChallenge(res.Identifier.Value, dnsChallenge, dnsChallengeValidator);
-                    if (!resValidation) throw new Exception($"Could not validate DNS challenge:\n {RetrieveChallengeContents(dnsChallenge.Location.ToString())}");
+                    if (!resValidation) throw new Exception($"Could not validate DNS challenge:\n {dnsChallenge.Resource().Result.Error.Detail}");
                 } else throw new Exception("DNS Challenge Validation set up, but server sent no DNS Challenge");
             } else {
                 // Get the HTTP challenge
@@ -184,17 +184,9 @@ namespace WinCertes
                 if (httpChallenge != null) {
                     logger.Debug($"Initiating HTTP Validation for {res.Identifier.Value}");
                     var resValidation = await ValidateHTTPChallenge(httpChallenge, httpChallengeValidator);
-                    if (!resValidation) throw new Exception($"Could not validate HTTP challenge:\n {RetrieveChallengeContents(httpChallenge.Location.ToString())}");
+                    if (!resValidation) throw new Exception($"Could not validate HTTP challenge:\n {httpChallenge.Resource().Result.Error.Detail}");
                 } else throw new Exception("HTTP Challenge Validation set up, but server sent no HTTP Challenge");
             }
-        }
-
-        private String RetrieveChallengeContents(String URI)
-        {
-            HttpClient client = new HttpClient();
-            var response = client.GetAsync(URI).Result;
-            if (response.StatusCode != System.Net.HttpStatusCode.OK) throw new Exception($"Could not retrieve challenge at: {URI}");
-            return response.Content.ReadAsStringAsync().Result;
         }
 
         /// <summary>
@@ -268,7 +260,6 @@ namespace WinCertes
 
             // Finally we cleanup everything that was needed for validation
             challengeValidator.CleanupChallengeAfterValidation(httpChallenge.Token);
-
             // If challenge is Invalid, Pending or Processing, something went wrong...
             if (challengeRes.Status != ChallengeStatus.Valid) return false;
 
