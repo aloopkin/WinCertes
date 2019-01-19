@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("WinCertes")]
-[assembly: AssemblyCopyright("Copyright ©  2018 Alexandre Aufrere")]
+[assembly: AssemblyCopyright("Copyright ©  2018-2019 Alexandre Aufrere")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
