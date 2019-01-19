@@ -14,9 +14,12 @@ Features:
 - SAN support (multi-domain certificates)
 - Full support for ACMEv2, including Wildcard Certificate support (\*.example.com) [\*]
 - Optional powershell scripting for advanced deployment (Exchange, multi-server, etc)
-- Http only challenge validation.
+- HTTP challenge validation.
 	- Built-in Http Challenge Server for easier configuration of challenge responses
 	- Ability to support already installed web server (by default IIS) to provide challenge responses
+- DNS challenge validation
+	- Support for Windows DNS Server
+	- Support for [acme-dns](https://github.com/joohoi/acme-dns)
 - Import of certificate and key into chosen CSP/KSP, enabling compatibility with HSMs
 - Support of any ACMEv2 compliant CA, including Let's Encrypt and Let's Encrypt Staging (for tests/dry-run)
 - Windows Installer for easy deployment
@@ -24,7 +27,7 @@ Features:
 - Support for certificate revocation
 - Logs activity to STDOUT and file
 
-[\*] Warning: Let's Encrypt does not allow wildcard certificates issuance with HTTP validation. So, while WinCertes supports it, it won't work with Let's Encrypt (but it might work with other CAs).
+[\*] Warning: Let's Encrypt does not allow wildcard certificates issuance with HTTP validation. So, the DNS validation mode MUST be used to retrieve wildcard certificate.
 
 ----------
 Quick Start (IIS users)
@@ -37,7 +40,7 @@ WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -b "De
 ```
 And... That's all! The certificate is requested from Let's Encrypt, and bound to IIS' Default Web Site
 
-Advanced users can explore the different validation modes, deployment modes and other advanced options.
+Advanced users can explore the different validation modes, deployment modes and other advanced options. See Registry.md regarding advanced options and DNS validation modes.
 
 Command Line Options
 -------------
@@ -136,9 +139,9 @@ It is possible to fix the issue permanently:
 Troubleshooting
 -------------
 
-Usually when the enrollment fails you can get more information by opening the link in the latest error message given by WinCertes. Most of the time it should look like:
+Usually when the enrollment fails you can get more information in the latest error message given by WinCertes. Most of the time it should look like:
 ```
-Failed to register and validate order with CA: Could not validate challenge https://acme-staging-v02.api.letsencrypt.org/acme/challenge/[challenge_removed]
+Failed to register and validate order with CA: Could not validate challenge: Could not resolve DNS name test.example.com
 ```
 Most common causes are:
 - When using the "standalone" mode (`-a` switch), the Windows Firewall gets in the way. Try to fully deactivate it.
