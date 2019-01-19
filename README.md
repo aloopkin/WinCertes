@@ -165,7 +165,7 @@ The development requires Visual Studio 2017, and Wix if you want to build the in
 
 
 
-This project is (c) 2018 Alexandre Aufrere
+This project is (c) 2018-2019 Alexandre Aufrere
 
 Released under the terms of GPLv3
 
