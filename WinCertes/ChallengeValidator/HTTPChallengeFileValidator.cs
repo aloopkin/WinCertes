@@ -12,6 +12,7 @@ namespace WinCertes.ChallengeValidator
         private static readonly ILogger logger = LogManager.GetLogger("WinCertes.ChallengeValidator.HTTPChallengeFileValidator");
 
         string _challengeVerifyPath = "";
+        private bool noWellKnown = false;
 
         /// <summary>
         /// Class constructor
@@ -26,7 +27,12 @@ namespace WinCertes.ChallengeValidator
                  + "</staticContent>\n</system.webServer>\n</configuration>";
             try {
                 // First we create necessary directories
-                System.IO.Directory.CreateDirectory($"{_challengeVerifyPath}\\.well-known");
+                // the well-known dir could have been created for other reasons
+                if (!System.IO.Directory.Exists($"{_challengeVerifyPath}\\.well-known")) {
+                    noWellKnown = true;
+                    System.IO.Directory.CreateDirectory($"{_challengeVerifyPath}\\.well-known");
+                }
+                // we expect to be in charge of acme-challenge subdir
                 System.IO.Directory.CreateDirectory($"{_challengeVerifyPath}\\.well-known\\acme-challenge");
                 File.WriteAllText($"{_challengeVerifyPath}\\.well-known\\acme-challenge\\web.config", webConfig);
             } catch (Exception e) {
@@ -71,11 +77,11 @@ namespace WinCertes.ChallengeValidator
                 File.Delete($"{_challengeVerifyPath}\\.well-known\\acme-challenge\\web.config");
                 // Finally we delete all directories that we needed
                 System.IO.Directory.Delete($"{_challengeVerifyPath}\\.well-known\\acme-challenge");
-                System.IO.Directory.Delete($"{_challengeVerifyPath}\\.well-known");
+                if (noWellKnown)
+                    System.IO.Directory.Delete($"{_challengeVerifyPath}\\.well-known");
             } catch (Exception e) {
                 logger.Warn($"Could not delete challenge file directory: {e.Message}");
             }
-
         }
     }
 }
