@@ -26,8 +26,9 @@ namespace WinCertes
             BindName = null;
             ScriptFile = null;
             Standalone = false;
-            Revoke = false;
+            Revoke = -1;
             Csp = null;
+            RenewalDelay = 30;
         }
         public string ServiceUri { get; set; }
         public string Email { get; set; }
@@ -35,8 +36,9 @@ namespace WinCertes
         public string BindName { get; set; }
         public string ScriptFile { get; set; }
         public bool Standalone { get; set; }
-        public bool Revoke { get; set; }
+        public int Revoke { get; set; }
         public string Csp { get; set; }
+        public int RenewalDelay { get; set; }
 
         /// <summary>
         /// Writes command line parameters into the specified config
@@ -53,15 +55,12 @@ namespace WinCertes
                 Standalone = config.WriteAndReadBooleanParameter("standalone", Standalone);
                 // do we have a webroot parameter to handle?
                 WebRoot = config.WriteAndReadStringParameter("webRoot", WebRoot);
-                // if not, let's use the default web root of IIS
-                if ((WebRoot == null) && (!Standalone)) {
-                    WebRoot = "c:\\inetpub\\wwwroot";
-                    config.WriteStringParameter("webRoot", WebRoot);
-                }
                 // Should we bind to IIS? If yes, let's do some config
                 BindName = config.WriteAndReadStringParameter("bindName", BindName);
                 // Should we execute some PowerShell ? If yes, let's do some config
                 ScriptFile = config.WriteAndReadStringParameter("scriptFile", ScriptFile);
+                // Writing renewal delay to conf
+                config.WriteIntParameter("renewalDays", RenewalDelay);
             } catch (Exception e) {
                 _logger.Error($"Could not Read/Write command line parameters to configuration: {e.Message}");
             }
@@ -93,13 +92,14 @@ namespace WinCertes
                 { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => _winCertesOptions.ServiceUri = v },
                 { "e|email=", "the account email to be used for ACME requests (optional, defaults to no email)", v => _winCertesOptions.Email = v },
                 { "d|domain=", "the domain(s) to enroll (mandatory)", v => _domains.Add(v) },
-                { "w|webroot=", "the web server root directory (optional, defaults to c:\\inetpub\\wwwroot)", v => _winCertesOptions.WebRoot = v },
+                { "w|webserver:", "toggles the local web server use and sets its {ROOT} directory (default c:\\inetpub\\wwwroot). Activates HTTP validation mode.", (string v) => { _winCertesOptions.WebRoot = (v==null)?"c:\\inetpub\\wwwroot":v;} },
                 { "p|periodic", "should WinCertes create the Windows Scheduler task to handle certificate renewal (default=no)", v => _periodic = (v != null) },
-                { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\".", v => _winCertesOptions.BindName = v },
+                { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\". Defaults to no binding.", v => _winCertesOptions.BindName = v },
                 { "f|scriptfile=", "PowerShell Script file e.g. \"C:\\Temp\\script.ps1\" to execute upon successful enrollment (default=none)", v => _winCertesOptions.ScriptFile = v },
-                { "a|standalone", "should WinCertes create its own WebServer for validation (default=no). WARNING: it will use port 80", v => _winCertesOptions.Standalone = (v != null) },
-                { "r|revoke", "should WinCertes revoke the certificate identified by its domains (incompatible with other parameters except -d)", v => _winCertesOptions.Revoke = (v != null) },
-                { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v }
+                { "a|standalone", "should WinCertes create its own WebServer for validation. Activates HTTP validation mode. WARNING: it will use port 80", v => _winCertesOptions.Standalone = (v != null) },
+                { "r|revoke:", "should WinCertes revoke the certificate identified by its domains (to be used only with -d). {REASON} is an optional integer between 0 and 5.", (int v) => _winCertesOptions.Revoke = v },
+                { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v },
+                { "t|renewal=", "trigger certificate renewal {N} days before expiration", (int v) => _winCertesOptions.RenewalDelay = v }
             };
 
             // and the handling of these options
@@ -108,6 +108,8 @@ namespace WinCertes
                 res = options.Parse(args);
             } catch (Exception e) { WriteErrorMessageWithUsage(options, e.Message); return false; }
             if (_domains.Count == 0) { WriteErrorMessageWithUsage(options, "At least one domain must be specified"); return false; }
+            if (_winCertesOptions.Revoke > 5) { WriteErrorMessageWithUsage(options, "Revocation Reason is a number between 0 and 5"); return false; }
+            _domains = _domains.ConvertAll(d => d.ToLower());
             _domains.Sort();
             return true;
         }
@@ -119,7 +121,7 @@ namespace WinCertes
         /// <param name="message"></param>
         private static void WriteErrorMessageWithUsage(OptionSet options, string message)
         {
-            string exampleUsage = "\nTypical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p\n"
+            string exampleUsage = "\nTypical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p\n"
                 + "This will automatically create and register account with email me@example.com, and\n"
                 + "request the certificate for test1.example.com and test2.example.com, then import it into\n"
                 + "Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.\n\n"
@@ -152,7 +154,7 @@ namespace WinCertes
         /// Revoke certificate issued for specified list of domains
         /// </summary>
         /// <param name="domains"></param>
-        private static void RevokeCert(List<string> domains)
+        private static void RevokeCert(List<string> domains, int revoke)
         {
             string serial = _config.ReadStringParameter("certSerial" + Utils.DomainsToHostId(domains));
             if (serial == null) {
@@ -165,7 +167,7 @@ namespace WinCertes
                 return;
             }
             // Here we revoke from ACME Service. Note that any error is already handled into the wrapper
-            if (Task.Run(() => _certesWrapper.RevokeCertificate(cert)).GetAwaiter().GetResult()) {
+            if (Task.Run(() => _certesWrapper.RevokeCertificate(cert, revoke)).GetAwaiter().GetResult()) {
                 _config.DeleteParameter("CertExpDate" + Utils.DomainsToHostId(domains));
                 _config.DeleteParameter("CertSerial" + Utils.DomainsToHostId(domains));
                 X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
@@ -247,7 +249,7 @@ namespace WinCertes
             try {
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
             } catch (Exception e) { _logger.Error(e.Message); return; }
-            if (_winCertesOptions.Revoke) { RevokeCert(_domains); return; }
+            if (_winCertesOptions.Revoke > -1) { RevokeCert(_domains, _winCertesOptions.Revoke); return; }
             // default mode: enrollment/renewal. check if there's something to be done
             // note that in any case, we want to be able to set the scheduled task (won't do anything if taskName is null)
             if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return; }

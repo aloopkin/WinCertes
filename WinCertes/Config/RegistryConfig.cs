@@ -23,7 +23,7 @@ namespace WinCertes
                     Registry.LocalMachine.OpenSubKey("SOFTWARE").CreateSubKey("WinCertes");
                 }
             } catch (Exception e) {
-                _logger.Error($"Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
+                _logger.Warn($"Warning: Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
             }
         }
 

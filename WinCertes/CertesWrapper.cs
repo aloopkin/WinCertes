@@ -352,13 +352,14 @@ namespace WinCertes
         /// </summary>
         /// <param name="certificate">the certificate to revoke</param>
         /// <returns>true in case of success, false otherwise</returns>
-        public async Task<bool> RevokeCertificate(X509Certificate2 certificate)
+        public async Task<bool> RevokeCertificate(X509Certificate2 certificate, int reason)
         {
             if (certificate == null) return false;
             try {
                 InitCertes();
 
-                await _acme.RevokeCertificate(certificate.RawData, RevocationReason.Unspecified, null);
+                RevocationReason rr = (RevocationReason)(Enum.GetValues(RevocationReason.Unspecified.GetType())).GetValue(reason);
+                await _acme.RevokeCertificate(certificate.RawData, rr, null);
 
                 return true;
             } catch (Exception exp) {
