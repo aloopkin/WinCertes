@@ -77,6 +77,7 @@ namespace WinCertes
         private static WinCertesOptions _winCertesOptions;
         private static List<string> _domains;
         private static bool _periodic = false;
+        private static OptionSet _options;
 
         /// <summary>
         /// Handles command line options
@@ -88,7 +89,7 @@ namespace WinCertes
             _domains = new List<string>();
 
             // Options that can be used by this application
-            OptionSet options = new OptionSet() {
+            _options = new OptionSet() {
                 { "s|service=", "the ACME Service URI to be used (optional, defaults to Let's Encrypt)", v => _winCertesOptions.ServiceUri = v },
                 { "e|email=", "the account email to be used for ACME requests (optional, defaults to no email)", v => _winCertesOptions.Email = v },
                 { "d|domain=", "the domain(s) to enroll (mandatory)", v => _domains.Add(v) },
@@ -105,10 +106,10 @@ namespace WinCertes
             // and the handling of these options
             List<string> res;
             try {
-                res = options.Parse(args);
-            } catch (Exception e) { WriteErrorMessageWithUsage(options, e.Message); return false; }
-            if (_domains.Count == 0) { WriteErrorMessageWithUsage(options, "At least one domain must be specified"); return false; }
-            if (_winCertesOptions.Revoke > 5) { WriteErrorMessageWithUsage(options, "Revocation Reason is a number between 0 and 5"); return false; }
+                res = _options.Parse(args);
+            } catch (Exception e) { WriteErrorMessageWithUsage(_options, e.Message); return false; }
+            if (_domains.Count == 0) { WriteErrorMessageWithUsage(_options, "At least one domain must be specified"); return false; }
+            if (_winCertesOptions.Revoke > 5) { WriteErrorMessageWithUsage(_options, "Revocation Reason is a number between 0 and 5"); return false; }
             _domains = _domains.ConvertAll(d => d.ToLower());
             _domains.Sort();
             return true;
@@ -257,7 +258,7 @@ namespace WinCertes
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
             IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
             IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(_config);
-            if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) return;
+            if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) { WriteErrorMessageWithUsage(_options, "Specify either an HTTP or a DNS validation method.");  return; }
             if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, httpChallengeValidator, dnsChallengeValidator)).GetAwaiter().GetResult())) { httpChallengeValidator.EndAllChallengeValidations(); return; }
             httpChallengeValidator.EndAllChallengeValidations();
 
