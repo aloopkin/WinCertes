@@ -53,6 +53,19 @@ namespace WinCertes
                 store.Add(Certificate);
                 store.Close();
                 logger.Info($"Stored certificate with DN {Certificate.Subject} into Windows Personal Local Machine store");
+                // Now let's try to import the full chain
+                try {
+                    X509Certificate2Collection certCol = new X509Certificate2Collection();
+                    X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
+                    certCol.Import(AuthenticatedPFX.PfxFullPath, AuthenticatedPFX.PfxPassword, flags);
+                    foreach (X509Certificate2 certFile in certCol) {
+                        if (certFile.Equals(Certificate)) continue;
+                        store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                        store.Open(OpenFlags.ReadWrite);
+                        store.Add(certFile);
+                        store.Close();
+                    }
+                } catch (Exception) { /* discarded as it's not so important if it fails */ }
             } catch (Exception e) {
                 logger.Error($"Impossible to import certificate into Default CSP: {e.Message}");
             }

@@ -28,7 +28,14 @@ namespace MSIPackaging
                               new RegValue(RegistryHive.LocalMachine, @"Software\WinCertes", "license", "GPLv3") { Win64 = true },
                               new RemoveRegistryValue(RegistryHive.LocalMachine, @"Software\WinCertes"),
                               new RemoveRegistryKey(RegistryHive.LocalMachine, @"Software\WinCertes"),
-                              new EnvironmentVariable("PATH", "[INSTALLDIR]"));
+                              new EnvironmentVariable("Path", @"[INSTALLDIR]") {
+                                  Id = "Path_WinCertes_INSTALLDIR",
+                                  Action = EnvVarAction.set,
+                                  Part = EnvVarPart.last,
+                                  Permanent = false,
+                                  System = true
+                              }
+                              );
             project.GUID = new Guid("bb0a8e11-24a8-4d7e-a7d6-6fc5bd8166d2");
             project.Version = Version.Parse("1.1.2");
             project.LicenceFile = path + @"\MSIPackaging\Resources\gpl-3.0.rtf";
