@@ -99,18 +99,16 @@ namespace WinCertes
         {
             if (siteName == null) return false;
             try {
-                Binding formerBinding = RemoveHTTPSBindingFromIISSite(siteName);
+                String formerBindingInfo = RemoveHTTPSBindingFromIISSite(siteName);
                 ServerManager serverMgr = new ServerManager();
                 Site site = serverMgr.Sites[siteName];
                 Binding binding;
-                if (formerBinding == null) {
+                if (formerBindingInfo == null) {
                     binding = site.Bindings.Add("*:443:", certificate.GetCertHash(), "MY");
-                    binding.Protocol = "https";
                 } else {
-                    formerBinding.CertificateHash = certificate.GetCertHash();
-                    formerBinding.CertificateStoreName = "MY";
-                    binding = site.Bindings.Add(formerBinding);
+                    binding = site.Bindings.Add(formerBindingInfo, certificate.GetCertHash(), "MY");
                 }
+                binding.Protocol = "https";
                 site.ApplicationDefaults.EnabledProtocols = "http,https";
                 serverMgr.CommitChanges();
                 return true;
@@ -124,20 +122,20 @@ namespace WinCertes
         /// Removes the HTTPS Binding from the specified IIS Site 
         /// </summary>
         /// <param name="siteName"></param>
-        private static Binding RemoveHTTPSBindingFromIISSite(string siteName)
+        private static String RemoveHTTPSBindingFromIISSite(string siteName)
         {
-            Binding existingOne = null;
+            String existingOneInfo = null;
             ServerManager serverMgr = new ServerManager();
             Site site = serverMgr.Sites[siteName];
             for (int i = 0; i < site.Bindings.Count; i++) {
                 if (site.Bindings[i].Protocol.Equals("https")) {
-                    existingOne = site.Bindings[i];
+                    existingOneInfo = site.Bindings[i].BindingInformation;
                     site.Bindings.RemoveAt(i);
                     break;
                 }
             }
             serverMgr.CommitChanges();
-            return existingOne;
+            return existingOneInfo;
         }
 
         /// <summary>
