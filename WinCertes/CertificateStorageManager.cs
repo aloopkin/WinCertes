@@ -60,7 +60,7 @@ namespace WinCertes
                     certCol.Import(AuthenticatedPFX.PfxFullPath, AuthenticatedPFX.PfxPassword, flags);
                     foreach (X509Certificate2 certFile in certCol) {
                         if (certFile.Equals(Certificate)) continue;
-                        store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                        store = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
                         store.Open(OpenFlags.ReadWrite);
                         store.Add(certFile);
                         store.Close();
