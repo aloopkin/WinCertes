@@ -14,6 +14,7 @@ DNS "acme-dns" validation plugin
 
 See https://github.com/joohoi/acme-dns for more information on acme-dns. All the paramaters are "String" parameters.
 
+- DNSValidatorType: acme-dns
 - DNSServerURL: The acme-dns server "update" URL, e.g. http://acme-dns.host/update
 - DNSServerUser: The acme-dns username, e.g. eabcdb41-d89f-4580-826f-3e62e9755ef2 
 - DNSServerKey: The acme-dns password, e.g. pbAXVjlIOE01xbut7YnAbkhMQIkcwoHO0ek2j4Q0
@@ -25,6 +26,7 @@ DNS "Windows DNS" validation plugin
 
 This plugin allows to update Windows DNS server records. All the parameters are "String" parameters.
 
+- DNSValidatorType: win-dns
 - DNSServerHost: The Windows DNS Server Hostname/IP, e.g. dns.example.corp
 - DNSServerUser:  The Windows DNS Server User, with enough rights on the server to update DNS contents, e.g. Administrator
 - DNSServerPassword: The password of the aformentioned Windows DNS Server User
