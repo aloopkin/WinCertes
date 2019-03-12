@@ -259,8 +259,8 @@ namespace WinCertes
             IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
             IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(_config);
             if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) { WriteErrorMessageWithUsage(_options, "Specify either an HTTP or a DNS validation method.");  return; }
-            if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, httpChallengeValidator, dnsChallengeValidator)).GetAwaiter().GetResult())) { httpChallengeValidator.EndAllChallengeValidations(); return; }
-            httpChallengeValidator.EndAllChallengeValidations();
+            if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, httpChallengeValidator, dnsChallengeValidator)).GetAwaiter().GetResult())) { if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations(); return; }
+            if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
