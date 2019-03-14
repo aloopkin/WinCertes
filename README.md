@@ -36,7 +36,7 @@ Quick Start (IIS users)
 2. Launch a command line (cmd.exe) as Administrator
 3. Enter the following command:
 ```dos
-WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -b "Default Web Site" -p
+WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -w -b "Default Web Site" -p
 ```
 And... That's all! The certificate is requested from Let's Encrypt, and bound to IIS' Default Web Site
 
