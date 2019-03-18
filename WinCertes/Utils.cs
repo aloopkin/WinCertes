@@ -251,7 +251,7 @@ namespace WinCertes
                 return "WinCertes";
             }
             string friendly = domains[0].Replace(@"*", "").Replace("-", "").Replace(":", "").Replace(".", "");
-            return friendly;
+            return friendly.Substring(0,16);
         }
 
         /// <summary>
