@@ -250,11 +250,8 @@ namespace WinCertes
             if (domains.Count == 0) {
                 return "WinCertes";
             }
-            string friendly = domains[0].Replace(@"*", "").Replace("-", "").Replace(":", "");
-            if (friendly.IndexOf(".") > 0)
-                return friendly.Substring(0, friendly.IndexOf("."));
-            else
-                return friendly;
+            string friendly = domains[0].Replace(@"*", "").Replace("-", "").Replace(":", "").Replace(".", "");
+            return friendly;
         }
 
         /// <summary>

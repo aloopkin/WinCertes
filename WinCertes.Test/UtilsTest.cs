@@ -48,7 +48,7 @@ namespace WinCertes.Test
             domains.Add("test2.example.com");
             domains.Sort();
             string friendlyName = Utils.DomainsToFriendlyName(domains);
-            if (!friendlyName.Equals("test")) {
+            if (!friendlyName.Equals("testexamplecom")) {
                 // we're not ok
                 Assert.Fail();
             }
