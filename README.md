@@ -36,7 +36,7 @@ Quick Start (IIS users)
 2. Launch a command line (cmd.exe) as Administrator
 3. Enter the following command:
 ```dos
-WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -b "Default Web Site" -p
+WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -w -b "Default Web Site" -p
 ```
 And... That's all! The certificate is requested from Let's Encrypt, and bound to IIS' Default Web Site
 
@@ -52,25 +52,28 @@ WinCertes.exe:
   -e, --email=VALUE          the account email to be used for ACME requests (
                                optional, defaults to no email)
   -d, --domain=VALUE         the domain(s) to enroll (mandatory)
-  -w, --webroot=VALUE        the web server root directory (optional, defaults
-                               to c:\inetpub\wwwroot)
+  -w, --webserver[=ROOT]     toggles the local web server use and sets its ROOT
+                               directory (default c:\inetpub\wwwroot).
+                               Activates HTTP validation mode.
   -p, --periodic             should WinCertes create the Windows Scheduler task
                                to handle certificate renewal (default=no)
   -b, --bindname=VALUE       IIS site name to bind the certificate to, e.g. "
-                               Default Web Site".
+                               Default Web Site". Defaults to no binding.
   -f, --scriptfile=VALUE     PowerShell Script file e.g. "C:\Temp\script.ps1"
                                to execute upon successful enrollment (default=
                                none)
   -a, --standalone           should WinCertes create its own WebServer for
-                               validation (default=no). WARNING: it will use
-                               port 80
-  -r, --revoke               should WinCertes revoke the certificate identified
-                               by its domains (incompatible with other
-                               parameters except -d)
+                               validation. Activates HTTP validation mode.
+                               WARNING: it will use port 80
+  -r, --revoke[=REASON]      should WinCertes revoke the certificate identified
+                               by its domains (to be used only with -d). REASON
+                               is an optional integer between 0 and 5.
   -k, --csp=VALUE            import the certificate into specified csp. By
                                default WinCertes imports in the default CSP.
+  -t, --renewal=N            trigger certificate renewal N days before
+                               expiration
 
-Typical usage: WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -p
+Typical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p
 This will automatically create and register account with email me@example.com, and
 request the certificate for test1.example.com and test2.example.com, then import it into
 Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.
