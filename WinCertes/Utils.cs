@@ -197,7 +197,7 @@ namespace WinCertes
                     td.Triggers.Add(new TS.DailyTrigger { DaysInterval = 2 });
 
                     // Create an action that will launch Notepad whenever the trigger fires
-                    td.Actions.Add(new TS.ExecAction("WinCertes.exe", "-d " + String.Join("-d ", domains), Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)));
+                    td.Actions.Add(new TS.ExecAction("WinCertes.exe", "-d " + String.Join(" -d ", domains), Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)));
 
                     // Register the task in the root folder
                     ts.RootFolder.RegisterTaskDefinition($"WinCertes - {taskName}", td);
