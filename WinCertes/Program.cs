@@ -29,6 +29,7 @@ namespace WinCertes
             Revoke = -1;
             Csp = null;
             RenewalDelay = 30;
+            HttpPort = 80;
         }
         public string ServiceUri { get; set; }
         public string Email { get; set; }
@@ -39,6 +40,7 @@ namespace WinCertes
         public int Revoke { get; set; }
         public string Csp { get; set; }
         public int RenewalDelay { get; set; }
+        public int HttpPort { get; set; }
 
         /// <summary>
         /// Writes command line parameters into the specified config
@@ -61,6 +63,8 @@ namespace WinCertes
                 ScriptFile = config.WriteAndReadStringParameter("scriptFile", ScriptFile);
                 // Writing renewal delay to conf
                 config.WriteIntParameter("renewalDays", RenewalDelay);
+                // Writing HTTP listening Port in conf
+                HttpPort = config.ReadOrWriteIntParameter("httpPort", HttpPort);
             } catch (Exception e) {
                 _logger.Error($"Could not Read/Write command line parameters to configuration: {e.Message}");
             }
@@ -100,7 +104,8 @@ namespace WinCertes
                 { "a|standalone", "should WinCertes create its own WebServer for validation. Activates HTTP validation mode. WARNING: it will use port 80", v => _winCertesOptions.Standalone = (v != null) },
                 { "r|revoke:", "should WinCertes revoke the certificate identified by its domains (to be used only with -d). {REASON} is an optional integer between 0 and 5.", (int v) => _winCertesOptions.Revoke = v },
                 { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v },
-                { "t|renewal=", "trigger certificate renewal {N} days before expiration", (int v) => _winCertesOptions.RenewalDelay = v }
+                { "t|renewal=", "trigger certificate renewal {N} days before expiration", (int v) => _winCertesOptions.RenewalDelay = v },
+                { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v }
             };
 
             // and the handling of these options
@@ -256,7 +261,7 @@ namespace WinCertes
             if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return; }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
-            IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.WebRoot);
+            IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.HttpPort, _winCertesOptions.WebRoot);
             IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(_config);
             if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) { WriteErrorMessageWithUsage(_options, "Specify either an HTTP or a DNS validation method.");  return; }
             if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, httpChallengeValidator, dnsChallengeValidator)).GetAwaiter().GetResult())) { if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations(); return; }

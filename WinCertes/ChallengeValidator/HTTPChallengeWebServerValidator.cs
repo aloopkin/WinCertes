@@ -12,14 +12,15 @@ namespace WinCertes.ChallengeValidator
         private Thread _serverThread;
         private HttpListener _listener;
         private string _tokenContents;
+        private int httpPort;
 
         private void Listen()
         {
             try {
                 _listener = new HttpListener();
-                _listener.Prefixes.Add("http://*:80/");
+                _listener.Prefixes.Add("http://*:"+this.httpPort+"/");
                 _listener.Start();
-                logger.Debug("Started Listener on port 80");
+                logger.Debug("Started Listener on port "+this.httpPort);
                 while (true) {
                     try {
                         HttpListenerContext context = _listener.GetContext();
@@ -55,8 +56,9 @@ namespace WinCertes.ChallengeValidator
         /// Class constructor. Starts the simple web server on port 80.
         /// HTTPChallengeWebServerValidator.Stop() MUST be called after use.
         /// </summary>
-        public HTTPChallengeWebServerValidator()
+        public HTTPChallengeWebServerValidator(int httpPort)
         {
+            this.httpPort = httpPort;
             try {
                 _serverThread = new Thread(this.Listen) {
                     IsBackground = true

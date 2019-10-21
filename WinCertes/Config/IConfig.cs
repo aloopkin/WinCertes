@@ -25,6 +25,14 @@
         /// <param name="parameter">the configuration parameter to manage</param>
         /// <param name="value">the default value is parameter does not exist in configuration</param>
         /// <returns>the value of the configuration parameter</returns>
+        int ReadOrWriteIntParameter(string parameter, int value);
+
+        /// <summary>
+        /// Tries to read parameter value from configuration. If it does not exist, uses provided value instead, and writes it to configuration
+        /// </summary>
+        /// <param name="parameter">the configuration parameter to manage</param>
+        /// <param name="value">the default value is parameter does not exist in configuration</param>
+        /// <returns>the value of the configuration parameter</returns>
         string ReadOrWriteStringParameter(string parameter, string value);
 
         /// <summary>
