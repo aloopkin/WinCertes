@@ -1,11 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2042
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29411.108
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinCertes", "WinCertes\WinCertes.csproj", "{82F5A366-760D-4108-B48A-C682D68085E6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSIPackaging", "MSIPackaging\MSIPackaging.csproj", "{D7C78EA2-F59B-4352-B0FA-4A7DB069067A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{82F5A366-760D-4108-B48A-C682D68085E6} = {82F5A366-760D-4108-B48A-C682D68085E6}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinCertes.Test", "WinCertes.Test\WinCertes.Test.csproj", "{7934DF92-5054-4D80-8FBF-2FD06B9DA3DB}"
 EndProject

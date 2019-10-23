@@ -18,7 +18,7 @@ namespace WinCertes.ChallengeValidator
         {
             IHTTPChallengeValidator challengeValidator = null;
             if (standalone) {
-                if (!CheckAvailableServerPort(80)) return null;
+                if (!CheckAvailableServerPort(httpPort)) return null;
                 challengeValidator = new HTTPChallengeWebServerValidator(httpPort);
             } else if (webRoot != null) {
                 challengeValidator = new HTTPChallengeFileValidator(webRoot);
