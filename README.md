@@ -66,7 +66,7 @@ WinCertes.exe:
                                none)
   -a, --standalone           should WinCertes create its own WebServer for
                                validation. Activates HTTP validation mode.
-                               WARNING: it will use port 80
+                               WARNING: it will use port 80 unless -l is specified
   -r, --revoke[=REASON]      should WinCertes revoke the certificate identified
                                by its domains (to be used only with -d). REASON
                                is an optional integer between 0 and 5.
@@ -74,6 +74,8 @@ WinCertes.exe:
                                default WinCertes imports in the default CSP.
   -t, --renewal=N            trigger certificate renewal N days before
                                expiration
+  -l, --listenport=N         listen on port N in standalone mode (for use with -a 
+                               switch, default 80)
 
 Typical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p
 This will automatically create and register account with email me@example.com, and
