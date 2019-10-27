@@ -29,6 +29,8 @@ Features:
 
 [\*] Warning: Let's Encrypt does not allow wildcard certificates issuance with HTTP validation. So, the DNS validation mode MUST be used to retrieve wildcard certificate.
 
+[EverTrust](https://github.com/EverTrust)
+
 ----------
 Quick Start (IIS users)
 ----------
