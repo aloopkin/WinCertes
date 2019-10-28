@@ -83,6 +83,9 @@ namespace WinCertes
         private static bool _periodic = false;
         private static OptionSet _options;
 
+        private static readonly int ERROR = 1;
+        private static readonly int ERROR_INCORRECT_PARAMETER = 2;
+
         /// <summary>
         /// Handles command line options
         /// </summary>
@@ -236,15 +239,15 @@ namespace WinCertes
             _logger.Info($"Removed file from filesystem: {path}");
         }
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             // Main parameters with their default values
             string taskName = null;
             _winCertesOptions = new WinCertesOptions();
 
-            if (!Utils.IsAdministrator()) { Console.WriteLine("WinCertes.exe must be launched as Administrator"); return; }
+            if (!Utils.IsAdministrator()) { Console.WriteLine("WinCertes.exe must be launched as Administrator"); return ERROR; }
             // Command line options handling and initialization stuff
-            if (!HandleOptions(args)) return;
+            if (!HandleOptions(args)) return ERROR_INCORRECT_PARAMETER;
             if (_periodic) taskName = Utils.DomainsToFriendlyName(_domains);
             InitWinCertesDirectoryPath();
             Utils.ConfigureLogger(_winCertesPath);
@@ -254,22 +257,22 @@ namespace WinCertes
             // Initialization and renewal/revocation handling
             try {
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
-            } catch (Exception e) { _logger.Error(e.Message); return; }
-            if (_winCertesOptions.Revoke > -1) { RevokeCert(_domains, _winCertesOptions.Revoke); return; }
+            } catch (Exception e) { _logger.Error(e.Message); return ERROR; }
+            if (_winCertesOptions.Revoke > -1) { RevokeCert(_domains, _winCertesOptions.Revoke); return 0; }
             // default mode: enrollment/renewal. check if there's something to be done
             // note that in any case, we want to be able to set the scheduled task (won't do anything if taskName is null)
-            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return; }
+            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return 0; }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
             IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.HttpPort, _winCertesOptions.WebRoot);
             IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(_config);
-            if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) { WriteErrorMessageWithUsage(_options, "Specify either an HTTP or a DNS validation method.");  return; }
-            if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, httpChallengeValidator, dnsChallengeValidator)).GetAwaiter().GetResult())) { if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations(); return; }
+            if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) { WriteErrorMessageWithUsage(_options, "Specify either an HTTP or a DNS validation method.");  return ERROR_INCORRECT_PARAMETER; }
+            if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, httpChallengeValidator, dnsChallengeValidator)).GetAwaiter().GetResult())) { if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations(); return ERROR; }
             if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
-            if (pfxName == null) return;
+            if (pfxName == null) return ERROR;
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, (_winCertesOptions.Csp == null));
             // Let's process the PFX into Windows Certificate objet.
@@ -288,6 +291,8 @@ namespace WinCertes
 
             // Let's delete the PFX file
             RemoveFileAndLog(pfx.PfxFullPath);
+
+            return 0;
         }
     }
 }
