@@ -66,7 +66,8 @@ WinCertes.exe:
                                none)
   -a, --standalone           should WinCertes create its own WebServer for
                                validation. Activates HTTP validation mode.
-                               WARNING: it will use port 80 unless -l is specified
+                               WARNING: it will use port 80 unless -l is
+                               specified.
   -r, --revoke[=REASON]      should WinCertes revoke the certificate identified
                                by its domains (to be used only with -d). REASON
                                is an optional integer between 0 and 5.
@@ -74,8 +75,8 @@ WinCertes.exe:
                                default WinCertes imports in the default CSP.
   -t, --renewal=N            trigger certificate renewal N days before
                                expiration
-  -l, --listenport=N         listen on port N in standalone mode (for use with -a 
-                               switch, default 80)
+  -l, --listenport=N         listen on port N in standalone mode (for use with -
+                               a switch, default 80)
 
 Typical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p
 This will automatically create and register account with email me@example.com, and
@@ -154,6 +155,7 @@ Most common causes are:
 - When using the "standalone" mode (`-a` switch), the Windows Firewall gets in the way. Try to fully deactivate it.
 - When not using the "standalone" mode, the Web Server document root is not specified correctly: use the `-w` switch.
 - You made too many tests on the LE production server. Remember to add `-s https://acme-staging-v02.api.letsencrypt.org/directory` to the command line when you test the enrollment!
+- After testing you need to reinitialize WinCertes context: delete all registry keys under HKLM\Software\WinCertes
 
 
 Development & Bug Reporting
@@ -168,7 +170,7 @@ If you have a bug or feature and you can fix the problem yourself please just:
    
 If you cannot provide a fix for the problem yourself, please file an issue and describe the fault with steps to reproduce.
 
-The development requires Visual Studio 2017, and Wix if you want to build the installer.
+The development requires Visual Studio 2017 or 2019, and Wix if you want to build the installer.
 
 
 
