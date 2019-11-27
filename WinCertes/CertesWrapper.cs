@@ -78,7 +78,7 @@ namespace WinCertes
             AssemblyName certesAssembly = typeof(AcmeContext).Assembly.GetName();
             AssemblyName winCertesAssembly = typeof(Program).Assembly.GetName();
             _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", $"WinCertes/{winCertesAssembly.Version.ToString()} (Certes/{certesAssembly.Version.ToString()})");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", $"WinCertes/{winCertesAssembly.Version.ToString()} (Certes/{certesAssembly.Version.ToString()}; {Environment.OSVersion.VersionString})");
         }
 
         /// <summary>
