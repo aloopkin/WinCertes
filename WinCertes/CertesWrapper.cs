@@ -5,6 +5,7 @@ using NLog;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,13 +35,14 @@ namespace WinCertes
         private CertesSettings _settings;
         private AcmeContext _acme;
         private IOrderContext _orderCtx = null;
+        private HttpClient _httpClient = null;
 
         /// <summary>
         /// Initializes Certes library context
         /// </summary>
         private void InitCertes()
         {
-            _acme = new AcmeContext(_settings.ServiceURI, _settings.AccountKey);
+            _acme = new AcmeContext(_settings.ServiceURI, _settings.AccountKey, new AcmeHttpClient(_settings.ServiceURI, _httpClient));
         }
 
         /// <summary>
@@ -72,6 +74,11 @@ namespace WinCertes
                 _settings.AccountKey = KeyFactory.NewKey(KeyAlgorithm.RS256);
                 _config.WriteStringParameter("accountKey", _settings.AccountKey.ToPem());
             }
+            // Instantiating HTTP Client
+            AssemblyName certesAssembly = typeof(AcmeContext).Assembly.GetName();
+            AssemblyName winCertesAssembly = typeof(Program).Assembly.GetName();
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", $"WinCertes/{winCertesAssembly.Version.ToString()} (Certes/{certesAssembly.Version.ToString()})");
         }
 
         /// <summary>
