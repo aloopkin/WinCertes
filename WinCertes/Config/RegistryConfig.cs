@@ -63,6 +63,20 @@ namespace WinCertes
         }
 
         /// <summary>
+        /// For the given parameter, writes its value into configuration, if value != defaultValue. In any case, reads it from configuration.
+        /// </summary>
+        /// <param name="parameter">the configuration parameter to manage</param>
+        /// <param name="value">the value of the configuration parameter</param>
+        /// <param name="defaultValue">the default value of the configuration parameter</param>
+        /// <returns>the value of the configuration parameter, defaultValue if none</returns>
+        public int WriteAndReadIntParameter(string parameter, int value, int defaultValue)
+        {
+            if (value != defaultValue)
+                WriteIntParameter(parameter, value);
+            return ReadIntParameter(parameter, defaultValue);
+        }
+
+        /// <summary>
         /// Tries to read parameter value from configuration. If it does not exist, uses provided value instead, and writes it to configuration
         /// </summary>
         /// <param name="parameter">the configuration parameter to manage</param>

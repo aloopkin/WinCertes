@@ -62,9 +62,9 @@ namespace WinCertes
                 // Should we execute some PowerShell ? If yes, let's do some config
                 ScriptFile = config.WriteAndReadStringParameter("scriptFile", ScriptFile);
                 // Writing renewal delay to conf
-                config.WriteIntParameter("renewalDays", RenewalDelay);
+                RenewalDelay = config.WriteAndReadIntParameter("renewalDays", RenewalDelay, 30);
                 // Writing HTTP listening Port in conf
-                HttpPort = config.ReadOrWriteIntParameter("httpPort", HttpPort);
+                HttpPort = config.WriteAndReadIntParameter("httpPort", HttpPort, 80);
             } catch (Exception e) {
                 _logger.Error($"Could not Read/Write command line parameters to configuration: {e.Message}");
             }
@@ -107,7 +107,7 @@ namespace WinCertes
                 { "a|standalone", "should WinCertes create its own WebServer for validation. Activates HTTP validation mode. WARNING: it will use port 80 unless -l is specified.", v => _winCertesOptions.Standalone = (v != null) },
                 { "r|revoke:", "should WinCertes revoke the certificate identified by its domains (to be used only with -d). {REASON} is an optional integer between 0 and 5.", (int v) => _winCertesOptions.Revoke = v },
                 { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v },
-                { "t|renewal=", "trigger certificate renewal {N} days before expiration", (int v) => _winCertesOptions.RenewalDelay = v },
+                { "t|renewal=", "trigger certificate renewal {N} days before expiration, default 30", (int v) => _winCertesOptions.RenewalDelay = v },
                 { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v }
             };
 
