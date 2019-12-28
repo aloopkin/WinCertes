@@ -118,7 +118,7 @@ namespace WinCertes
                 IAccountContext accountCtx = await _acme.NewAccount(_settings.AccountEmail, true);
                 _config.WriteIntParameter("registered", 1);
                 logger.Info($"Successfully registered account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}");
-                if (directory.Meta.TermsOfService != null) logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
+                if ((directory.Meta != null) && (directory.Meta.TermsOfService != null)) logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
                 return true;
             } catch (Exception exp) {
                 logger.Error($"Failed to register account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}: {ProcessCertesException(exp)}");
