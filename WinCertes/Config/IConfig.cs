@@ -86,5 +86,10 @@
         /// </summary>
         /// <param name="startsWith">the parameter to look for</param>
         bool isThereConfigParam(string startsWith);
+
+        /// <summary>
+        /// Deletes all WinCertes parameters from configuration
+        /// </summary>
+        void DeleteAllParameters();
     }
 }

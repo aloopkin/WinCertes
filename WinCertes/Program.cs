@@ -108,6 +108,7 @@ namespace WinCertes
         private static List<string> _domains;
         private static bool _periodic = false;
         private static bool _show = false;
+        private static bool _reset = false;
         private static OptionSet _options;
 
         private static readonly int ERROR = 1;
@@ -136,7 +137,8 @@ namespace WinCertes
                 { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v },
                 { "t|renewal=", "trigger certificate renewal {N} days before expiration, default 30", (int v) => _winCertesOptions.RenewalDelay = v },
                 { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v },
-                { "show", "Show current configuration parameters", v=> _show = (v != null ) }
+                { "show", "Show current configuration parameters", v=> _show = (v != null ) },
+                { "reset", "Resets all configuration parameters", v=> _reset = (v != null ) }
             };
 
             // and the handling of these options
@@ -146,7 +148,7 @@ namespace WinCertes
                 res = _options.Parse(args);
             }
             catch (Exception e) { WriteErrorMessageWithUsage(_options, e.Message); return false; }
-            if ((!_show) && (_domains.Count == 0)) { WriteErrorMessageWithUsage(_options, "At least one domain must be specified"); return false; }
+            if ((!_show) && (!_reset) && (_domains.Count == 0)) { WriteErrorMessageWithUsage(_options, "At least one domain must be specified"); return false; }
             if (_winCertesOptions.Revoke > 5) { WriteErrorMessageWithUsage(_options, "Revocation Reason is a number between 0 and 5"); return false; }
             _domains = _domains.ConvertAll(d => d.ToLower());
             _domains.Sort();
@@ -289,7 +291,7 @@ namespace WinCertes
             _config = new RegistryConfig();
             _winCertesOptions.WriteOptionsIntoConfiguration(_config);
             if (_show) { _winCertesOptions.displayOptions(_config); return 0; }
-
+            if (_reset) { _config.DeleteAllParameters(); return 0; }
 
             // Initialization and renewal/revocation handling
             try

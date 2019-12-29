@@ -151,7 +151,7 @@ namespace WinCertes
         }
 
         /// <summary>
-        /// Deletes paramter from configuration
+        /// Deletes parameter from configuration
         /// </summary>
         /// <param name="parameter"></param>
         public void DeleteParameter(string parameter)
@@ -177,5 +177,13 @@ namespace WinCertes
             return false;
         }
 
+        /// <summary>
+        /// Deletes all WinCertes parameters from configuration
+        /// </summary>
+        public void DeleteAllParameters()
+        {
+            Registry.LocalMachine.OpenSubKey(@"Software", true).DeleteSubKeyTree("WinCertes");
+            Registry.LocalMachine.OpenSubKey(@"Software").CreateSubKey("WinCertes");
+        }
     }
 }
