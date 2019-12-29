@@ -80,5 +80,11 @@
         /// <param name="parameter">the parameter to manage</param>
         /// <param name="value">the parameter value</param>
         void WriteStringParameter(string parameter, string value);
+
+        /// <summary>
+        /// Is there a configuration parameter starting with given key?
+        /// </summary>
+        /// <param name="startsWith">the parameter to look for</param>
+        bool isThereConfigParam(string startsWith);
     }
 }

@@ -60,7 +60,8 @@ namespace WinCertes
         public static bool ExecutePowerShell(string scriptFile, AuthenticatedPFX pfx)
         {
             if (scriptFile == null) return false;
-            try {
+            try
+            {
                 // First let's create the execution runspace
                 RunspaceConfiguration runspaceConfiguration = RunspaceConfiguration.Create();
                 Runspace runspace = RunspaceFactory.CreateRunspace(runspaceConfiguration);
@@ -83,7 +84,9 @@ namespace WinCertes
                 var results = pipeline.Invoke();
                 logger.Info($"Executed script {scriptFile}.");
                 return true;
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 logger.Error($"Could not execute {scriptFile}: {e.Message}");
                 return false;
             }
@@ -98,21 +101,27 @@ namespace WinCertes
         public static bool BindCertificateForIISSite(X509Certificate2 certificate, string siteName)
         {
             if (siteName == null) return false;
-            try {
+            try
+            {
                 String formerBindingInfo = RemoveHTTPSBindingFromIISSite(siteName);
                 ServerManager serverMgr = new ServerManager();
                 Site site = serverMgr.Sites[siteName];
                 Binding binding;
-                if (formerBindingInfo == null) {
+                if (formerBindingInfo == null)
+                {
                     binding = site.Bindings.Add("*:443:", certificate.GetCertHash(), "MY");
-                } else {
+                }
+                else
+                {
                     binding = site.Bindings.Add(formerBindingInfo, certificate.GetCertHash(), "MY");
                 }
                 binding.Protocol = "https";
                 site.ApplicationDefaults.EnabledProtocols = "http,https";
                 serverMgr.CommitChanges();
                 return true;
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 logger.Error($"Could not bind certificate to site {siteName}: {e.Message}");
                 return false;
             }
@@ -127,8 +136,10 @@ namespace WinCertes
             String existingOneInfo = null;
             ServerManager serverMgr = new ServerManager();
             Site site = serverMgr.Sites[siteName];
-            for (int i = 0; i < site.Bindings.Count; i++) {
-                if (site.Bindings[i].Protocol.Equals("https")) {
+            for (int i = 0; i < site.Bindings.Count; i++)
+            {
+                if (site.Bindings[i].Protocol.Equals("https"))
+                {
                     existingOneInfo = site.Bindings[i].BindingInformation;
                     site.Bindings.RemoveAt(i);
                     break;
@@ -164,7 +175,8 @@ namespace WinCertes
             config.LoggingRules.Add(new LoggingRule("*", LogLevel.Info, new ColoredConsoleTarget { Layout = "${message}" }));
 
             config.LoggingRules.Add(
-                new LoggingRule("*", LogLevel.Info, new FileTarget {
+                new LoggingRule("*", LogLevel.Info, new FileTarget
+                {
                     FileName = logPath + "\\wincertes.log",
                     ArchiveAboveSize = 500000,
                     ArchiveFileName = logPath + "\\wincertes.old.log",
@@ -184,8 +196,10 @@ namespace WinCertes
         public static void CreateScheduledTask(string taskName, List<string> domains)
         {
             if (taskName == null) return;
-            try {
-                using (TS.TaskService ts = new TS.TaskService()) {
+            try
+            {
+                using (TS.TaskService ts = new TS.TaskService())
+                {
                     // Create a new task definition and assign properties
                     TS.TaskDefinition td = ts.NewTask();
                     td.RegistrationInfo.Description = "Manages certificate using ACME";
@@ -203,8 +217,34 @@ namespace WinCertes
                     ts.RootFolder.RegisterTaskDefinition($"WinCertes - {taskName}", td);
                 }
                 logger.Info($"Scheduled Task \"WinCertes - {taskName}\" created successfully");
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 logger.Error("Unable to create Scheduled Task" + e.Message);
+            }
+        }
+
+        public static bool isScheduledTaskCreated()
+        {
+            try
+            {
+                using (TS.TaskService ts = new TS.TaskService())
+                {
+                    // Create a new task definition and assign properties
+                    TS.TaskDefinition td = ts.NewTask();
+
+                    foreach (TS.Task t in ts.RootFolder.Tasks)
+                    {
+                        if (t.Name.StartsWith("WinCertes"))
+                            return true;
+                    }
+                }
+                return false;
+            }
+            catch (Exception e)
+            {
+                logger.Error("Unable to read Scheduled Task status" + e.Message);
+                return false;
             }
         }
 
@@ -221,7 +261,8 @@ namespace WinCertes
             // Create a new Stringbuilder to collect the bytes and create a string.
             StringBuilder sBuilder = new StringBuilder();
             // Loop through each byte of the hashed data and format each one as a hexadecimal string.
-            for (int i = 0; i < data.Length; i++) {
+            for (int i = 0; i < data.Length; i++)
+            {
                 sBuilder.Append(data[i].ToString("x2"));
             }
             // Return the hexadecimal string.
@@ -247,12 +288,13 @@ namespace WinCertes
         /// <returns>the human readable name</returns>
         public static string DomainsToFriendlyName(List<string> domains)
         {
-            if (domains.Count == 0) {
+            if (domains.Count == 0)
+            {
                 return "WinCertes";
             }
             string friendly = domains[0].Replace(@"*", "").Replace("-", "").Replace(":", "").Replace(".", "");
-            friendly+="0000000000000000";
-            return friendly.Substring(0,16);
+            friendly += "0000000000000000";
+            return friendly.Substring(0, 16);
         }
 
         /// <summary>
@@ -262,18 +304,24 @@ namespace WinCertes
         /// <returns>the certificate, or null if not found</returns>
         public static X509Certificate2 GetCertificateBySerial(string serial)
         {
-            try {
+            try
+            {
                 X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.ReadOnly);
                 X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySerialNumber, serial, false);
                 store.Close();
-                if (collection.Count == 0) {
+                if (collection.Count == 0)
+                {
                     return null;
-                } else {
+                }
+                else
+                {
                     X509Certificate2 cert = collection[0];
                     return cert;
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 logger.Error($"Could not retrieve certificate from store: {e.Message}");
                 return null;
             }

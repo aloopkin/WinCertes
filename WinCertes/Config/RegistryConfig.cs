@@ -18,11 +18,15 @@ namespace WinCertes
         /// </summary>
         public RegistryConfig()
         {
-            try {
-                if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null) {
+            try
+            {
+                if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null)
+                {
                     Registry.LocalMachine.OpenSubKey("SOFTWARE").CreateSubKey("WinCertes");
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 _logger.Warn($"Warning: Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
             }
         }
@@ -56,7 +60,8 @@ namespace WinCertes
         /// <returns>the value of the configuration parameter, null if none</returns>
         public string WriteAndReadStringParameter(string parameter, string value)
         {
-            if (value != null) {
+            if (value != null)
+            {
                 WriteStringParameter(parameter, value);
             }
             return ReadStringParameter(parameter);
@@ -85,7 +90,8 @@ namespace WinCertes
         public string ReadOrWriteStringParameter(string parameter, string value)
         {
             string myValue = ReadStringParameter(parameter);
-            if (myValue == null) {
+            if (myValue == null)
+            {
                 WriteStringParameter(parameter, value);
             }
             return ReadStringParameter(parameter);
@@ -137,7 +143,8 @@ namespace WinCertes
         /// <returns>the flag's value</returns>
         public bool WriteAndReadBooleanParameter(string parameter, bool value)
         {
-            if (value) {
+            if (value)
+            {
                 WriteIntParameter(parameter, 1);
             }
             return (ReadIntParameter(parameter, 0) == 1);
@@ -150,9 +157,25 @@ namespace WinCertes
         public void DeleteParameter(string parameter)
         {
             RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\WinCertes", true);
-            if (key != null) {
+            if (key != null)
+            {
                 key.DeleteValue(parameter);
             }
         }
+
+        /// <summary>
+        /// Is there a configuration parameter starting with given key?
+        /// </summary>
+        /// <param name="startsWith">the parameter to look for</param>
+        public bool isThereConfigParam(string startsWith)
+        {
+            foreach (string key in Registry.LocalMachine.OpenSubKey(@"Software\WinCertes").GetValueNames())
+            {
+                if (key.StartsWith(startsWith))
+                    return true;
+            }
+            return false;
+        }
+
     }
 }

@@ -48,7 +48,8 @@ namespace WinCertes
         /// <param name="config">the configuration object</param>
         public void WriteOptionsIntoConfiguration(IConfig config)
         {
-            try {
+            try
+            {
                 // write service URI into conf, or reads from it, if any
                 ServiceUri = config.WriteAndReadStringParameter("serviceUri", ServiceUri);
                 // write account email into conf, or reads from it, if any
@@ -65,9 +66,34 @@ namespace WinCertes
                 RenewalDelay = config.WriteAndReadIntParameter("renewalDays", RenewalDelay, 30);
                 // Writing HTTP listening Port in conf
                 HttpPort = config.WriteAndReadIntParameter("httpPort", HttpPort, 80);
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 _logger.Error($"Could not Read/Write command line parameters to configuration: {e.Message}");
             }
+        }
+
+        public void displayOptions(IConfig config)
+        {
+            IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(config);
+            Console.WriteLine("Service URI:\t" + ServiceUri);
+            Console.WriteLine("Account Email:\t" + Email);
+            Console.WriteLine("Registered:\t" + (config.ReadIntParameter("registered") == 1 ? "yes" : "no"));
+            if (dnsChallengeValidator != null)
+            {
+                Console.WriteLine("Auth. Mode:\tdns-01 validation");
+            }
+            else
+            {
+                Console.WriteLine("Auth. Mode:\t" + (Standalone ? "http-01 validation standalone" : "http-01 validation with external web server"));
+                if (Standalone) Console.WriteLine("HTTP Port:\t" + HttpPort);
+                else Console.WriteLine("Web Root:\t" + WebRoot);
+            }
+            Console.WriteLine("IIS Bind Name:\t" + (BindName ?? "none"));
+            Console.WriteLine("PS Script File:\t" + (ScriptFile ?? "none"));
+            Console.WriteLine("Renewal Delay:\t" + RenewalDelay + " days");
+            Console.WriteLine("Task Scheduled:\t" + (Utils.isScheduledTaskCreated() ? "yes" : "no"));
+            Console.WriteLine("Cert Enrolled:\t" + (config.isThereConfigParam("certSerial") ? "yes" : "no"));
         }
     }
 
@@ -81,6 +107,7 @@ namespace WinCertes
         private static WinCertesOptions _winCertesOptions;
         private static List<string> _domains;
         private static bool _periodic = false;
+        private static bool _show = false;
         private static OptionSet _options;
 
         private static readonly int ERROR = 1;
@@ -108,15 +135,18 @@ namespace WinCertes
                 { "r|revoke:", "should WinCertes revoke the certificate identified by its domains (to be used only with -d). {REASON} is an optional integer between 0 and 5.", (int v) => _winCertesOptions.Revoke = v },
                 { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v },
                 { "t|renewal=", "trigger certificate renewal {N} days before expiration, default 30", (int v) => _winCertesOptions.RenewalDelay = v },
-                { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v }
+                { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v },
+                { "show", "Show current configuration parameters", v=> _show = (v != null ) }
             };
 
             // and the handling of these options
             List<string> res;
-            try {
+            try
+            {
                 res = _options.Parse(args);
-            } catch (Exception e) { WriteErrorMessageWithUsage(_options, e.Message); return false; }
-            if (_domains.Count == 0) { WriteErrorMessageWithUsage(_options, "At least one domain must be specified"); return false; }
+            }
+            catch (Exception e) { WriteErrorMessageWithUsage(_options, e.Message); return false; }
+            if ((!_show) && (_domains.Count == 0)) { WriteErrorMessageWithUsage(_options, "At least one domain must be specified"); return false; }
             if (_winCertesOptions.Revoke > 5) { WriteErrorMessageWithUsage(_options, "Revocation Reason is a number between 0 and 5"); return false; }
             _domains = _domains.ConvertAll(d => d.ToLower());
             _domains.Sort();
@@ -166,17 +196,20 @@ namespace WinCertes
         private static void RevokeCert(List<string> domains, int revoke)
         {
             string serial = _config.ReadStringParameter("certSerial" + Utils.DomainsToHostId(domains));
-            if (serial == null) {
+            if (serial == null)
+            {
                 _logger.Error($"Could not find certificate matching primary domain {domains[0]}. Please check the Subject CN of the certificate you wish to revoke");
                 return;
             }
             X509Certificate2 cert = Utils.GetCertificateBySerial(serial);
-            if (cert == null) {
+            if (cert == null)
+            {
                 _logger.Error($"Could not find certificate matching serial {serial}. Please check the Certificate Store");
                 return;
             }
             // Here we revoke from ACME Service. Note that any error is already handled into the wrapper
-            if (Task.Run(() => _certesWrapper.RevokeCertificate(cert, revoke)).GetAwaiter().GetResult()) {
+            if (Task.Run(() => _certesWrapper.RevokeCertificate(cert, revoke)).GetAwaiter().GetResult())
+            {
                 _config.DeleteParameter("CertExpDate" + Utils.DomainsToHostId(domains));
                 _config.DeleteParameter("CertSerial" + Utils.DomainsToHostId(domains));
                 X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
@@ -193,7 +226,8 @@ namespace WinCertes
         private static void InitWinCertesDirectoryPath()
         {
             _winCertesPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + "\\WinCertes";
-            if (!System.IO.Directory.Exists(_winCertesPath)) {
+            if (!System.IO.Directory.Exists(_winCertesPath))
+            {
                 System.IO.Directory.CreateDirectory(_winCertesPath);
             }
         }
@@ -222,7 +256,8 @@ namespace WinCertes
             _certesWrapper = new CertesWrapper(serviceUri, email);
 
             // If local computer's account isn't registered on the ACME service, we'll do it.
-            if (!_certesWrapper.IsAccountRegistered()) {
+            if (!_certesWrapper.IsAccountRegistered())
+            {
                 var regRes = Task.Run(() => _certesWrapper.RegisterNewAccount()).GetAwaiter().GetResult();
                 if (!regRes)
                     throw new Exception("Could not register ACME service account");
@@ -253,11 +288,15 @@ namespace WinCertes
             Utils.ConfigureLogger(_winCertesPath);
             _config = new RegistryConfig();
             _winCertesOptions.WriteOptionsIntoConfiguration(_config);
+            if (_show) { _winCertesOptions.displayOptions(_config); return 0; }
+
 
             // Initialization and renewal/revocation handling
-            try {
+            try
+            {
                 InitCertesWrapper(_winCertesOptions.ServiceUri, _winCertesOptions.Email);
-            } catch (Exception e) { _logger.Error(e.Message); return ERROR; }
+            }
+            catch (Exception e) { _logger.Error(e.Message); return ERROR; }
             if (_winCertesOptions.Revoke > -1) { RevokeCert(_domains, _winCertesOptions.Revoke); return 0; }
             // default mode: enrollment/renewal. check if there's something to be done
             // note that in any case, we want to be able to set the scheduled task (won't do anything if taskName is null)
@@ -266,7 +305,7 @@ namespace WinCertes
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
             IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.HttpPort, _winCertesOptions.WebRoot);
             IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(_config);
-            if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) { WriteErrorMessageWithUsage(_options, "Specify either an HTTP or a DNS validation method.");  return ERROR_INCORRECT_PARAMETER; }
+            if ((httpChallengeValidator == null) && (dnsChallengeValidator == null)) { WriteErrorMessageWithUsage(_options, "Specify either an HTTP or a DNS validation method."); return ERROR_INCORRECT_PARAMETER; }
             if (!(Task.Run(() => _certesWrapper.RegisterNewOrderAndVerify(_domains, httpChallengeValidator, dnsChallengeValidator)).GetAwaiter().GetResult())) { if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations(); return ERROR; }
             if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations();
 
