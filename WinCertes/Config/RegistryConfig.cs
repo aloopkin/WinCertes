@@ -182,8 +182,10 @@ namespace WinCertes
         /// </summary>
         public void DeleteAllParameters()
         {
-            Registry.LocalMachine.OpenSubKey(@"Software", true).DeleteSubKeyTree("WinCertes");
-            Registry.LocalMachine.OpenSubKey(@"Software").CreateSubKey("WinCertes");
+            foreach (string key in Registry.LocalMachine.OpenSubKey(@"Software\WinCertes").GetValueNames())
+            {
+                DeleteParameter(key);
+            }
         }
     }
 }
