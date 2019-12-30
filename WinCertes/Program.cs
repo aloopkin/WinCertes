@@ -137,8 +137,8 @@ namespace WinCertes
                 { "k|csp=", "import the certificate into specified csp. By default WinCertes imports in the default CSP.", v => _winCertesOptions.Csp = v },
                 { "t|renewal=", "trigger certificate renewal {N} days before expiration, default 30", (int v) => _winCertesOptions.RenewalDelay = v },
                 { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v },
-                { "show", "Show current configuration parameters", v=> _show = (v != null ) },
-                { "reset", "Resets all configuration parameters", v=> _reset = (v != null ) }
+                { "show", "show current configuration parameters", v=> _show = (v != null ) },
+                { "reset", "reset all configuration parameters", v=> _reset = (v != null ) }
             };
 
             // and the handling of these options
