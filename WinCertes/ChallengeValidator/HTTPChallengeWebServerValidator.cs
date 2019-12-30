@@ -20,7 +20,7 @@ namespace WinCertes.ChallengeValidator
                 _listener = new HttpListener();
                 _listener.Prefixes.Add("http://*:"+this.httpPort+"/");
                 _listener.Start();
-                logger.Debug("Started Listener on port "+this.httpPort);
+                logger.Debug("Started HTTP Listener on port "+this.httpPort);
                 while (true) {
                     try {
                         HttpListenerContext context = _listener.GetContext();
@@ -97,7 +97,7 @@ namespace WinCertes.ChallengeValidator
         {
             _serverThread.Abort();
             _listener.Stop();
-            logger.Debug("Just stopped the Listener on port 80");
+            logger.Debug("Just stopped the HTTP Listener");
         }
     }
 }
