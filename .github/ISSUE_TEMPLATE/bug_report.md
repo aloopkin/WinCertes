@@ -19,6 +19,7 @@ A clear and concise description of what you expected to happen.
 
 **Screenshots or Logs**
 If applicable, add screenshots or logs to help explain your problem. Please use the "Debug" version to provide logs.
+Also provide the parameters used to request the certificate by providing the output of "WinCertes --show"
 
 **Desktop (please complete the following information):**
  - OS: [e.g. Windows Server]
