@@ -77,6 +77,8 @@ WinCertes.exe:
                                expiration
   -l, --listenport=N         listen on port N in standalone mode (for use with -
                                a switch, default 80)
+      --show                 Show current configuration parameters
+      --reset                Resets all configuration parameters
 
 Typical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p
 This will automatically create and register account with email me@example.com, and
