@@ -79,6 +79,8 @@ WinCertes.exe:
                                a switch, default 80)
       --show                 show current configuration parameters
       --reset                reset all configuration parameters
+      --extra                manages one additonal certificate instead of the
+                               default one, with its own settings
 
 Typical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p
 This will automatically create and register account with email me@example.com, and
