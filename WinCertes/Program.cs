@@ -75,8 +75,13 @@ namespace WinCertes
 
         public void displayOptions(IConfig config)
         {
+            if (!config.isThereConfigParam("accountKey"))
+            {
+                Console.WriteLine("WinCertes is not configured yet");
+                return;
+            }
             IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(config);
-            Console.WriteLine("Service URI:\t" + ServiceUri);
+            Console.WriteLine("Service URI:\t" + ((ServiceUri==null) ? Certes.Acme.WellKnownServers.LetsEncryptV2.ToString() : ServiceUri));
             Console.WriteLine("Account Email:\t" + Email);
             Console.WriteLine("Registered:\t" + (config.ReadIntParameter("registered") == 1 ? "yes" : "no"));
             if (dnsChallengeValidator != null)
