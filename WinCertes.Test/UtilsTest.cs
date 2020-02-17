@@ -13,8 +13,8 @@ namespace WinCertes.Tests
         public void DomainsToHostIdTest()
         {
             List<string> domains = new List<string>();
-            domains.Add("test.example.com");
             domains.Add("test2.example.com");
+            domains.Add("test.example.com");
             domains.Sort();
             string hostId = Utils.DomainsToHostId(domains);
             if (!hostId.Equals("_6fb23d16b162f18a")) {
@@ -44,8 +44,8 @@ namespace WinCertes.Test
         public void DomainsToFriendlyNameTest()
         {
             List<string> domains = new List<string>();
-            domains.Add("test.example.com");
             domains.Add("test2.example.com");
+            domains.Add("test.example.com");
             domains.Sort();
             string friendlyName = Utils.DomainsToFriendlyName(domains);
             if (!friendlyName.Equals("testexamplecom00")) {
