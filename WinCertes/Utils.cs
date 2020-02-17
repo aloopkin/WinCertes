@@ -229,15 +229,12 @@ namespace WinCertes
             }
         }
 
-        public static bool isScheduledTaskCreated()
+        public static bool IsScheduledTaskCreated()
         {
             try
             {
                 using (TS.TaskService ts = new TS.TaskService())
                 {
-                    // Create a new task definition and assign properties
-                    TS.TaskDefinition td = ts.NewTask();
-
                     foreach (TS.Task t in ts.RootFolder.Tasks)
                     {
                         if (t.Name.StartsWith("WinCertes"))
@@ -250,6 +247,25 @@ namespace WinCertes
             {
                 logger.Error("Unable to read Scheduled Task status" + e.Message);
                 return false;
+            }
+        }
+
+        public static void DeleteScheduledTasks()
+        {
+            try
+            {
+                using (TS.TaskService ts = new TS.TaskService())
+                {
+                    foreach (TS.Task t in ts.RootFolder.Tasks)
+                    {
+                        if (t.Name.StartsWith("WinCertes"))
+                            ts.RootFolder.DeleteTask(t.Name, false);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error("Unable to read Scheduled Task status" + e.Message);
             }
         }
 

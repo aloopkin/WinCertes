@@ -28,6 +28,7 @@ namespace WinCertes
             Standalone = false;
             Revoke = -1;
             Csp = null;
+            noCsp = false;
             RenewalDelay = 30;
             HttpPort = 80;
         }
@@ -39,6 +40,7 @@ namespace WinCertes
         public bool Standalone { get; set; }
         public int Revoke { get; set; }
         public string Csp { get; set; }
+        public bool noCsp { get; set; }
         public int RenewalDelay { get; set; }
         public int HttpPort { get; set; }
 
@@ -66,6 +68,10 @@ namespace WinCertes
                 RenewalDelay = config.WriteAndReadIntParameter("renewalDays", RenewalDelay, 30);
                 // Writing HTTP listening Port in conf
                 HttpPort = config.WriteAndReadIntParameter("httpPort", HttpPort, 80);
+                // Should we store certificate in the CSP?
+                noCsp = config.WriteAndReadBooleanParameter("noCsp", noCsp);
+                // Let's store the CSP name, if any
+                Csp = config.WriteAndReadStringParameter("CSP", Csp);
             }
             catch (Exception e)
             {
@@ -95,9 +101,10 @@ namespace WinCertes
                 else Console.WriteLine("Web Root:\t" + WebRoot);
             }
             Console.WriteLine("IIS Bind Name:\t" + (BindName ?? "none"));
+            Console.WriteLine("Import in CSP:\t" + (config.isThereConfigParam("noCsp") ? "no" : "yes"));
             Console.WriteLine("PS Script File:\t" + (ScriptFile ?? "none"));
             Console.WriteLine("Renewal Delay:\t" + RenewalDelay + " days");
-            Console.WriteLine("Task Scheduled:\t" + (Utils.isScheduledTaskCreated() ? "yes" : "no"));
+            Console.WriteLine("Task Scheduled:\t" + (Utils.IsScheduledTaskCreated() ? "yes" : "no"));
             Console.WriteLine("Cert Enrolled:\t" + (config.isThereConfigParam("certSerial") ? "yes" : "no"));
         }
     }
@@ -115,7 +122,7 @@ namespace WinCertes
         private static bool _show = false;
         private static bool _reset = false;
         private static bool _extra = false;
-        private static OptionSet _options;
+       private static OptionSet _options;
 
         private static readonly int ERROR = 1;
         private static readonly int ERROR_INCORRECT_PARAMETER = 2;
@@ -145,7 +152,8 @@ namespace WinCertes
                 { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v },
                 { "show", "show current configuration parameters", v=> _show = (v != null ) },
                 { "reset", "reset all configuration parameters", v=> _reset = (v != null ) },
-                { "extra", "manages one additonal certificate instead of the default one, with its own settings", v=> _extra = (v != null ) }
+                { "extra", "manages one additonal certificate instead of the default one, with its own settings", v=> _extra = (v != null ) },
+                { "no-csp", "does not import the certificate into CSP. Use with caution, at your own risks", v=> _winCertesOptions.noCsp = (v != null) }
             };
 
             // and the handling of these options
@@ -297,7 +305,16 @@ namespace WinCertes
             _config = new RegistryConfig(_extra);
             _winCertesOptions.WriteOptionsIntoConfiguration(_config);
             if (_show) { _winCertesOptions.displayOptions(_config); return 0; }
-            if (_reset) { _config.DeleteAllParameters(); return 0; }
+
+            // Reset is a full reset !
+            if (_reset) {
+                IConfig extraConfig = new RegistryConfig(true);
+                extraConfig.DeleteAllParameters();
+                IConfig baseConfig = new RegistryConfig(false);
+                baseConfig.DeleteAllParameters();
+                Utils.DeleteScheduledTasks();
+                return 0;
+            }
 
             // Initialization and renewal/revocation handling
             try
@@ -327,7 +344,7 @@ namespace WinCertes
             // and we write its information to the WinCertes configuration
             RegisterCertificateIntoConfiguration(certificateStorageManager.Certificate, _domains);
             // Import the certificate into the Windows store
-            certificateStorageManager.ImportCertificateIntoCSP(_winCertesOptions.Csp);
+            if (!_winCertesOptions.noCsp) certificateStorageManager.ImportCertificateIntoCSP(_winCertesOptions.Csp);
 
             // Bind certificate to IIS Site (won't do anything if option is null)
             Utils.BindCertificateForIISSite(certificateStorageManager.Certificate, _winCertesOptions.BindName);

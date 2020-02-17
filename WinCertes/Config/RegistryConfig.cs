@@ -12,9 +12,10 @@ namespace WinCertes
         private static readonly ILogger _logger = LogManager.GetLogger("WinCertes.WinCertesOptions");
 
         private static string _registryKey = @"HKEY_LOCAL_MACHINE\SOFTWARE\WinCertes";
+        private static string _subKey = @"Software\WinCertes";
 
         /// <summary>
-        /// Class constructor
+        /// Class constructor. if extra = false, builds the base config. if extra = true, builds the extra certificate config.
         /// </summary>
         public RegistryConfig(bool extra = false)
         {
@@ -32,6 +33,7 @@ namespace WinCertes
                         Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes",true).CreateSubKey("extra", true);
                     }
                     _registryKey += @"\extra";
+                    _subKey += @"\extra";
                 }
             }
             catch (Exception e)
@@ -165,7 +167,7 @@ namespace WinCertes
         /// <param name="parameter"></param>
         public void DeleteParameter(string parameter)
         {
-            RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\WinCertes", true);
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(_subKey, true);
             if (key != null)
             {
                 key.DeleteValue(parameter);
@@ -178,7 +180,7 @@ namespace WinCertes
         /// <param name="startsWith">the parameter to look for</param>
         public bool isThereConfigParam(string startsWith)
         {
-            foreach (string key in Registry.LocalMachine.OpenSubKey(@"Software\WinCertes").GetValueNames())
+            foreach (string key in Registry.LocalMachine.OpenSubKey(_subKey).GetValueNames())
             {
                 if (key.StartsWith(startsWith))
                     return true;
@@ -191,7 +193,7 @@ namespace WinCertes
         /// </summary>
         public void DeleteAllParameters()
         {
-            foreach (string key in Registry.LocalMachine.OpenSubKey(@"Software\WinCertes").GetValueNames())
+            foreach (string key in Registry.LocalMachine.OpenSubKey(_subKey).GetValueNames())
             {
                 DeleteParameter(key);
             }

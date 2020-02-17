@@ -81,6 +81,8 @@ WinCertes.exe:
       --reset                reset all configuration parameters
       --extra                manages one additonal certificate instead of the
                                default one, with its own settings
+      --no-csp               does not import the certificate into CSP. Use with
+                               caution, at your own risks
 
 Typical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p
 This will automatically create and register account with email me@example.com, and
