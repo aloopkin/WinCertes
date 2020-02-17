@@ -16,18 +16,27 @@ namespace WinCertes
         /// <summary>
         /// Class constructor
         /// </summary>
-        public RegistryConfig()
+        public RegistryConfig(bool extra = false)
         {
             try
             {
                 if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null)
                 {
-                    Registry.LocalMachine.OpenSubKey("SOFTWARE").CreateSubKey("WinCertes");
+                    Registry.LocalMachine.OpenSubKey("SOFTWARE",true).CreateSubKey("WinCertes",true);
+                }
+                if (extra)
+                {
+                    if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra") == null)
+                    {
+                        _logger.Debug("Creating SubKey 'extra'");
+                        Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes",true).CreateSubKey("extra", true);
+                    }
+                    _registryKey += @"\extra";
                 }
             }
             catch (Exception e)
             {
-                _logger.Warn($"Warning: Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
+                _logger.Warn(e,$"Warning: Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
             }
         }
 

@@ -114,6 +114,7 @@ namespace WinCertes
         private static bool _periodic = false;
         private static bool _show = false;
         private static bool _reset = false;
+        private static bool _extra = false;
         private static OptionSet _options;
 
         private static readonly int ERROR = 1;
@@ -143,7 +144,8 @@ namespace WinCertes
                 { "t|renewal=", "trigger certificate renewal {N} days before expiration, default 30", (int v) => _winCertesOptions.RenewalDelay = v },
                 { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v },
                 { "show", "show current configuration parameters", v=> _show = (v != null ) },
-                { "reset", "reset all configuration parameters", v=> _reset = (v != null ) }
+                { "reset", "reset all configuration parameters", v=> _reset = (v != null ) },
+                { "extra", "manages one additonal certificate instead of the default one, with its own settings", v=> _extra = (v != null ) }
             };
 
             // and the handling of these options
@@ -156,7 +158,6 @@ namespace WinCertes
             if ((!_show) && (!_reset) && (_domains.Count == 0)) { WriteErrorMessageWithUsage(_options, "At least one domain must be specified"); return false; }
             if (_winCertesOptions.Revoke > 5) { WriteErrorMessageWithUsage(_options, "Revocation Reason is a number between 0 and 5"); return false; }
             _domains = _domains.ConvertAll(d => d.ToLower());
-            _domains.Sort();
             return true;
         }
 
@@ -293,7 +294,7 @@ namespace WinCertes
             if (_periodic) taskName = Utils.DomainsToFriendlyName(_domains);
             InitWinCertesDirectoryPath();
             Utils.ConfigureLogger(_winCertesPath);
-            _config = new RegistryConfig();
+            _config = new RegistryConfig(_extra);
             _winCertesOptions.WriteOptionsIntoConfiguration(_config);
             if (_show) { _winCertesOptions.displayOptions(_config); return 0; }
             if (_reset) { _config.DeleteAllParameters(); return 0; }
@@ -307,7 +308,7 @@ namespace WinCertes
             if (_winCertesOptions.Revoke > -1) { RevokeCert(_domains, _winCertesOptions.Revoke); return 0; }
             // default mode: enrollment/renewal. check if there's something to be done
             // note that in any case, we want to be able to set the scheduled task (won't do anything if taskName is null)
-            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains); return 0; }
+            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains,_extra); return 0; }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
             IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.HttpPort, _winCertesOptions.WebRoot);
@@ -333,7 +334,7 @@ namespace WinCertes
             // Execute PowerShell Script (won't do anything if option is null)
             Utils.ExecutePowerShell(_winCertesOptions.ScriptFile, pfx);
             // Create the AT task that will execute WinCertes periodically (won't do anything if taskName is null)
-            Utils.CreateScheduledTask(taskName, _domains);
+            Utils.CreateScheduledTask(taskName, _domains,_extra);
 
             // Let's delete the PFX file
             RemoveFileAndLog(pfx.PfxFullPath);

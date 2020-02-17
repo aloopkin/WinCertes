@@ -103,19 +103,22 @@ namespace WinCertes
             if (siteName == null) return false;
             try
             {
-                String formerBindingInfo = RemoveHTTPSBindingFromIISSite(siteName);
+                String[] formerBindingInfos = RemoveHTTPSBindingFromIISSite(siteName);
                 ServerManager serverMgr = new ServerManager();
                 Site site = serverMgr.Sites[siteName];
                 Binding binding;
-                if (formerBindingInfo == null)
+                if ((formerBindingInfos == null) || (formerBindingInfos.Length==0))
                 {
                     binding = site.Bindings.Add("*:443:", certificate.GetCertHash(), "MY");
+                    binding.Protocol = "https";
                 }
                 else
                 {
-                    binding = site.Bindings.Add(formerBindingInfo, certificate.GetCertHash(), "MY");
+                    foreach (String formerBindingInfo in formerBindingInfos) {
+                        binding = site.Bindings.Add(formerBindingInfo, certificate.GetCertHash(), "MY");
+                        binding.Protocol = "https";
+                    }
                 }
-                binding.Protocol = "https";
                 site.ApplicationDefaults.EnabledProtocols = "http,https";
                 serverMgr.CommitChanges();
                 return true;
@@ -131,22 +134,21 @@ namespace WinCertes
         /// Removes the HTTPS Binding from the specified IIS Site 
         /// </summary>
         /// <param name="siteName"></param>
-        private static String RemoveHTTPSBindingFromIISSite(string siteName)
+        private static String[] RemoveHTTPSBindingFromIISSite(string siteName)
         {
-            String existingOneInfo = null;
+            List<String> existingOneInfo = null;
             ServerManager serverMgr = new ServerManager();
             Site site = serverMgr.Sites[siteName];
             for (int i = 0; i < site.Bindings.Count; i++)
             {
                 if (site.Bindings[i].Protocol.Equals("https"))
                 {
-                    existingOneInfo = site.Bindings[i].BindingInformation;
+                    existingOneInfo.Add(site.Bindings[i].BindingInformation);
                     site.Bindings.RemoveAt(i);
-                    break;
                 }
             }
             serverMgr.CommitChanges();
-            return existingOneInfo;
+            return existingOneInfo.ToArray();
         }
 
         /// <summary>
@@ -193,7 +195,7 @@ namespace WinCertes
         /// </summary>
         /// <param name="domains"></param>
         /// <param name="taskName"></param>
-        public static void CreateScheduledTask(string taskName, List<string> domains)
+        public static void CreateScheduledTask(string taskName, List<string> domains, bool extra)
         {
             if (taskName == null) return;
             try
@@ -209,9 +211,12 @@ namespace WinCertes
 
                     // Create a trigger that will fire the task at this time every other day
                     td.Triggers.Add(new TS.DailyTrigger { DaysInterval = 2 });
+                    String extraOpt = "";
 
+                    if (extra)
+                        extraOpt = "--extra ";
                     // Create an action that will launch Notepad whenever the trigger fires
-                    td.Actions.Add(new TS.ExecAction("WinCertes.exe", "-d " + String.Join(" -d ", domains), Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)));
+                    td.Actions.Add(new TS.ExecAction("WinCertes.exe", extraOpt + "-d " + String.Join(" -d ", domains), Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)));
 
                     // Register the task in the root folder
                     ts.RootFolder.RegisterTaskDefinition($"WinCertes - {taskName}", td);
@@ -292,6 +297,7 @@ namespace WinCertes
             {
                 return "WinCertes";
             }
+            domains.Sort();
             string friendly = domains[0].Replace(@"*", "").Replace("-", "").Replace(":", "").Replace(".", "");
             friendly += "0000000000000000";
             return friendly.Substring(0, 16);
