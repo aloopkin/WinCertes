@@ -122,7 +122,7 @@ namespace WinCertes
         private static bool _show = false;
         private static bool _reset = false;
         private static bool _extra = false;
-       private static OptionSet _options;
+        private static OptionSet _options;
 
         private static readonly int ERROR = 1;
         private static readonly int ERROR_INCORRECT_PARAMETER = 2;
@@ -153,7 +153,7 @@ namespace WinCertes
                 { "show", "show current configuration parameters", v=> _show = (v != null ) },
                 { "reset", "reset all configuration parameters", v=> _reset = (v != null ) },
                 { "extra", "manages one additonal certificate instead of the default one, with its own settings", v=> _extra = (v != null ) },
-                { "no-csp", "does not import the certificate into CSP. Use with caution, at your own risks", v=> _winCertesOptions.noCsp = (v != null) }
+                { "no-csp", "does not import the certificate into CSP. Use with caution, at your own risks. REVOCATION WILL NOT WORK IN THAT MODE.", v=> _winCertesOptions.noCsp = (v != null) }
             };
 
             // and the handling of these options
@@ -308,8 +308,6 @@ namespace WinCertes
 
             // Reset is a full reset !
             if (_reset) {
-                IConfig extraConfig = new RegistryConfig(true);
-                extraConfig.DeleteAllParameters();
                 IConfig baseConfig = new RegistryConfig(false);
                 baseConfig.DeleteAllParameters();
                 Utils.DeleteScheduledTasks();

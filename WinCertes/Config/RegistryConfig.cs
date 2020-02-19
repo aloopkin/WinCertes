@@ -1,6 +1,8 @@
 ﻿using Microsoft.Win32;
 using NLog;
 using System;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace WinCertes
 {
@@ -35,6 +37,16 @@ namespace WinCertes
                     _registryKey += @"\extra";
                     _subKey += @"\extra";
                 }
+                RegistryKey regKey = Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes", RegistryKeyPermissionCheck.ReadWriteSubTree, RegistryRights.FullControl);
+                RegistrySecurity regSec = regKey.GetAccessControl(AccessControlSections.All);
+                regSec.SetOwner(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
+                regSec.SetAccessRuleProtection(true, false);
+                regKey.SetAccessControl(regSec);
+                RegistryAccessRule adminFull = new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), RegistryRights.FullControl, InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit, PropagationFlags.None, AccessControlType.Allow);
+                regSec.AddAccessRule(adminFull);
+                adminFull = new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), RegistryRights.FullControl, InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit, PropagationFlags.None, AccessControlType.Allow);
+                regSec.AddAccessRule(adminFull);
+                regKey.SetAccessControl(regSec);
             }
             catch (Exception e)
             {
@@ -193,6 +205,10 @@ namespace WinCertes
         /// </summary>
         public void DeleteAllParameters()
         {
+            if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra") != null)
+            {
+                Registry.LocalMachine.OpenSubKey(_subKey,true).DeleteSubKeyTree("extra");
+            }
             foreach (string key in Registry.LocalMachine.OpenSubKey(_subKey).GetValueNames())
             {
                 DeleteParameter(key);
