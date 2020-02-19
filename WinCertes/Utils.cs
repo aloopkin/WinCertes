@@ -103,52 +103,39 @@ namespace WinCertes
             if (siteName == null) return false;
             try
             {
-                String[] formerBindingInfos = RemoveHTTPSBindingFromIISSite(siteName);
+                bool foundBinding = false;
                 ServerManager serverMgr = new ServerManager();
                 Site site = serverMgr.Sites[siteName];
-                Binding binding;
-                if ((formerBindingInfos == null) || (formerBindingInfos.Length==0))
+                if (site == null)
                 {
-                    binding = site.Bindings.Add("*:443:", certificate.GetCertHash(), "MY");
-                    binding.Protocol = "https";
+                    logger.Error($"Could not find IIS site {siteName}");
+                    return false;
                 }
-                else
+                foreach (Binding binding in site.Bindings)
                 {
-                    foreach (String formerBindingInfo in formerBindingInfos) {
-                        binding = site.Bindings.Add(formerBindingInfo, certificate.GetCertHash(), "MY");
-                        binding.Protocol = "https";
+                    if (binding.Protocol == "https")
+                    {
+                        binding.CertificateHash = certificate.GetCertHash();
+                        binding.CertificateStoreName = "MY";
+                        foundBinding = true;
                     }
                 }
+
+                if (!foundBinding)
+                {
+                    Binding binding = site.Bindings.Add("*:443:", certificate.GetCertHash(), "MY");
+                    binding.Protocol = "https";
+                }
+ 
                 site.ApplicationDefaults.EnabledProtocols = "http,https";
                 serverMgr.CommitChanges();
                 return true;
             }
             catch (Exception e)
             {
-                logger.Error($"Could not bind certificate to site {siteName}: {e.Message}");
+                logger.Error(e,$"Could not bind certificate to site {siteName}: {e.Message}");
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Removes the HTTPS Binding from the specified IIS Site 
-        /// </summary>
-        /// <param name="siteName"></param>
-        private static String[] RemoveHTTPSBindingFromIISSite(string siteName)
-        {
-            List<String> existingOneInfo = null;
-            ServerManager serverMgr = new ServerManager();
-            Site site = serverMgr.Sites[siteName];
-            for (int i = 0; i < site.Bindings.Count; i++)
-            {
-                if (site.Bindings[i].Protocol.Equals("https"))
-                {
-                    existingOneInfo.Add(site.Bindings[i].BindingInformation);
-                    site.Bindings.RemoveAt(i);
-                }
-            }
-            serverMgr.CommitChanges();
-            return existingOneInfo.ToArray();
         }
 
         /// <summary>
@@ -297,8 +284,9 @@ namespace WinCertes
         /// <returns>the identifier</returns>
         public static string DomainsToHostId(List<string> domains)
         {
-            domains.Sort();
-            string domainList = String.Join("-", domains);
+            List<string> wDomains = new List<string>(domains);
+            wDomains.Sort();
+            string domainList = String.Join("-", wDomains);
             return "_" + GetMD5Hash(MD5.Create(), domainList).Substring(0, 16).ToLower();
         }
 
@@ -313,8 +301,10 @@ namespace WinCertes
             {
                 return "WinCertes";
             }
-            domains.Sort();
-            string friendly = domains[0].Replace(@"*", "").Replace("-", "").Replace(":", "").Replace(".", "");
+            List<string> wDomains = new List<string>(domains);
+            wDomains.Sort();
+            wDomains.Sort();
+            string friendly = wDomains[0].Replace(@"*", "").Replace("-", "").Replace(":", "").Replace(".", "");
             friendly += "0000000000000000";
             return friendly.Substring(0, 16);
         }

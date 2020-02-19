@@ -338,7 +338,7 @@ namespace WinCertes
             var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
             if (pfxName == null) return ERROR;
             AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
-            CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, (_winCertesOptions.Csp == null));
+            CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, ((_winCertesOptions.Csp == null)&&(!_winCertesOptions.noCsp)));
             // Let's process the PFX into Windows Certificate objet.
             certificateStorageManager.ProcessPFX();
             // and we write its information to the WinCertes configuration

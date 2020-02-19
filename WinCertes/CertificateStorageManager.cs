@@ -34,7 +34,10 @@ namespace WinCertes
                 // If we use the default CSP, then the key should be persisted as local machine while we parse the certificate
                 X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
                 // else it should be left non-persistent so that it can disappear after treatment
-                if (!DefaultCSP) { flags = X509KeyStorageFlags.DefaultKeySet | X509KeyStorageFlags.Exportable; }
+                if (!DefaultCSP) {
+                    logger.Debug("Not using default CSP: not importing into store.");
+                    flags = X509KeyStorageFlags.DefaultKeySet | X509KeyStorageFlags.Exportable; 
+                }
                 Certificate = new X509Certificate2(AuthenticatedPFX.PfxFullPath, AuthenticatedPFX.PfxPassword, flags);
             } catch (Exception e) {
                 logger.Error($"Impossible to extract certificate from PFX: {e.Message}");
@@ -67,7 +70,7 @@ namespace WinCertes
                     }
                 } catch (Exception) { /* discarded as it's not so important if it fails */ }
             } catch (Exception e) {
-                logger.Error($"Impossible to import certificate into Default CSP: {e.Message}");
+                logger.Error(e,$"Impossible to import certificate into Default CSP: {e.Message}");
             }
         }
 
