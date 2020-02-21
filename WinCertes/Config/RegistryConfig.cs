@@ -37,21 +37,43 @@ namespace WinCertes
                     _registryKey += @"\extra";
                     _subKey += @"\extra";
                 }
-                RegistryKey regKey = Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes", RegistryKeyPermissionCheck.ReadWriteSubTree, RegistryRights.FullControl);
+                RegistryKey regKey = Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes");
                 RegistrySecurity regSec = regKey.GetAccessControl(AccessControlSections.All);
-                regSec.SetOwner(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
-                regSec.SetAccessRuleProtection(true, false);
-                regKey.SetAccessControl(regSec);
-                RegistryAccessRule adminFull = new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), RegistryRights.FullControl, InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit, PropagationFlags.None, AccessControlType.Allow);
-                regSec.AddAccessRule(adminFull);
-                adminFull = new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), RegistryRights.FullControl, InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit, PropagationFlags.None, AccessControlType.Allow);
-                regSec.AddAccessRule(adminFull);
-                regKey.SetAccessControl(regSec);
-            }
+                foreach(RegistryAccessRule rule in regSec.GetAccessRules(true, true, typeof(NTAccount))) {
+                    if (rule.IdentityReference.Value==@"BUILTIN\Users")
+                    {
+                        _logger.Debug("Users have rights on Registry entry: Need to fix rights");
+                        fixRights();
+                        break;
+                    }
+                }
+             }
             catch (Exception e)
             {
                 _logger.Warn(e,$"Warning: Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
             }
+        }
+
+        private void fixRights()
+        {
+            // We have a private key inside the registry, therefore we should ensure only admins have access to it
+            RegistryKey regKey = Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes", RegistryKeyPermissionCheck.ReadWriteSubTree, RegistryRights.FullControl);
+            RegistrySecurity regSec = regKey.GetAccessControl(AccessControlSections.All);
+            regSec.SetOwner(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
+            regSec.SetAccessRuleProtection(true, false);
+            regKey.SetAccessControl(regSec);
+            RegistryAccessRule adminFull = new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), RegistryRights.FullControl, InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit, PropagationFlags.None, AccessControlType.Allow);
+            regSec.AddAccessRule(adminFull);
+            adminFull = new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), RegistryRights.FullControl, InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit, PropagationFlags.None, AccessControlType.Allow);
+            regSec.AddAccessRule(adminFull);
+            string domain = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().DomainName;
+            // If we're joined to a domain, we probably need to give access to domain admins as well
+            if ((domain != null) && (domain.Length > 0))
+            {
+                adminFull = new RegistryAccessRule(new SecurityIdentifier(WellKnownSidType.AccountDomainAdminsSid, null), RegistryRights.FullControl, InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit, PropagationFlags.None, AccessControlType.Allow);
+                regSec.AddAccessRule(adminFull);
+            }
+            regKey.SetAccessControl(regSec);
         }
 
         /// <summary>
