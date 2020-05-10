@@ -11,7 +11,7 @@ namespace WinCertes.ChallengeValidator
     class DNSChallengeWinDnsValidator : IDNSChallengeValidator
     {
         private static readonly ILogger logger = LogManager.GetLogger("WinCertes.ChallengeValidator.DNSChallengeWinDnsValidator");
-        private IConfig _config;
+        private WinCertesOptions _options;
         private String DNSServerHost;
         private String DNSServerUser;
         private String DNSServerPassword;
@@ -21,13 +21,13 @@ namespace WinCertes.ChallengeValidator
         /// Constructor for the Windows-DNS DNS challenge validator
         /// </summary>
         /// <param name="config"></param>
-        public DNSChallengeWinDnsValidator(IConfig config)
+        public DNSChallengeWinDnsValidator()
         {
-            _config = config;
-            DNSServerHost = _config.ReadStringParameter("DNSServerHost");
-            DNSServerUser = _config.ReadStringParameter("DNSServerUser");
-            DNSServerPassword = _config.ReadStringParameter("DNSServerPassword");
-            DNSServerZone = _config.ReadStringParameter("DNSServerZone");
+            _options = Program._winCertesOptions;
+            DNSServerHost = _options.DNSServerHost;
+            DNSServerUser = _options.DNSServerUser;
+            DNSServerPassword = _options.DNSServerPassword;
+            DNSServerZone = _options.DNSServerZone;
         }
 
         /// <summary>

@@ -6,22 +6,24 @@ using System.Threading.Tasks;
 
 namespace WinCertes.ChallengeValidator
 {
-    class DNSChallengeValidatorFactory
+    static class DNSChallengeValidatorFactory
     {
         /// <summary>
         /// Builds the DNS Challenge validator. For now only ACME DNS is supported.
         /// </summary>
-        /// <param name="config"></param>
-        /// <returns></returns>
-        public static IDNSChallengeValidator GetDNSChallengeValidator(IConfig config)
+        /// <returns>challengeValidator instance</returns>
+        public static IDNSChallengeValidator GetDNSChallengeValidator()
         {
+            string dnsValidatorType = Program._winCertesOptions.DNSValidatorType;
+
             IDNSChallengeValidator challengeValidator = null;
-            if (config.ReadStringParameter("DNSValidatorType") == null) return null;
-            if (config.ReadStringParameter("DNSValidatorType") == "acme-dns") {
-                challengeValidator = new DNSChallengeAcmeDnsValidator(config);
+            if (dnsValidatorType == null || dnsValidatorType.Length < 1)
+                return null;
+            if (dnsValidatorType == "acme-dns") {
+                challengeValidator = new DNSChallengeAcmeDnsValidator();
             }
-            if (config.ReadStringParameter("DNSValidatorType") == "win-dns") {
-                challengeValidator = new DNSChallengeWinDnsValidator(config);
+            if (dnsValidatorType == "win-dns") {
+                challengeValidator = new DNSChallengeWinDnsValidator();
             }
             return challengeValidator;
         }

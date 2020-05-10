@@ -59,7 +59,7 @@ namespace WinCertes
                 // Now let's try to import the full chain
                 try {
                     X509Certificate2Collection certCol = new X509Certificate2Collection();
-                    X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
+                    X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable;
                     certCol.Import(AuthenticatedPFX.PfxFullPath, AuthenticatedPFX.PfxPassword, flags);
                     foreach (X509Certificate2 certFile in certCol) {
                         if (certFile.Equals(Certificate)) continue;

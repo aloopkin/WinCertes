@@ -21,6 +21,7 @@ namespace WinCertes.ChallengeValidator
                 _listener.Prefixes.Add("http://*:"+this.httpPort+"/");
                 _listener.Start();
                 logger.Debug("Started HTTP Listener on port "+this.httpPort);
+                Thread.Sleep(1000);
                 while (true) {
                     try {
                         HttpListenerContext context = _listener.GetContext();
@@ -29,8 +30,11 @@ namespace WinCertes.ChallengeValidator
                         // ignore error, as thread abort will generate one anyway
                     }
                 }
-            } catch (Exception e) {
-                if (!e.Message.Equals("Thread was being aborted.")) logger.Error($"Could not start to listen on port 80: {e.Message}");
+            }
+            catch (Exception e)
+            {
+                if (!e.Message.Equals("Thread was being aborted.")) 
+                    logger.Error($"Could not start to listen on port 80: {e.Message}");
             }
         }
 
@@ -53,7 +57,7 @@ namespace WinCertes.ChallengeValidator
         }
 
         /// <summary>
-        /// Class constructor. Starts the simple web server on port 80.
+        /// Class constructor. Starts the simple web server on port httpPort.
         /// HTTPChallengeWebServerValidator.Stop() MUST be called after use.
         /// </summary>
         public HTTPChallengeWebServerValidator(int httpPort)

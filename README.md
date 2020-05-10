@@ -1,8 +1,31 @@
-# WinCertes - ACME Client for Windows
+# WinCertes2 - ACME Client for Windows
 
-WinCertes is a simple ACMEv2 Client for Windows, able to manage the automatic issuance and renewal of SSL Certificates, for IIS or other web servers. It is based on [Certes](https://github.com/fszlin/certes) Library. Pre-compiled binaries are available from GitHub (just look for the standard GitHub menu entry).
+WinCertes is a simple ACMEv2 Client for Windows, able to manage the automatic issuance and renewal of SSL Certificates, for IIS or other web servers. It is based on [Certes](https://github.com/fszlin/certes) Library and [Certes](https://github.com/aloopkin/WinCertes). Pre-compiled binaries are available from GitHub (just look for the standard GitHub menu entry).
 
 ![GPLv3 License](https://www.gnu.org/graphics/gplv3-88x31.png)
+
+- cshawky\WinCertes updates:
+    - All registry details now stored under a subkey
+    - Support for information in the root key (but prefer user moves the values into the named subkey)
+    - Support for "extra" subkey
+    - Legacy support of aloopkin\WinCertes registry setup has had limited testing.
+    - Huge changes to the options and registry interface (to support unlimited certificates and legacy support).
+    - Registry create rewritten and tested as creation of HKLM\Software\WinCertes kept failing on Win10 and Win2016 with UAC, Antivirus, Malware Bytes and Acronis Active Protection all enabled.
+    - More diagnostic debugging added, but could not get NLog loglevel change to take effect so added command line check before initialising logs. New parameter --debug to increase debug without recompilation.
+    - Lots of testing of --certname -d -x -a --reset --show --creatednskeys -l -e -f
+    - Added built in support to create PEM type certificates --exportpem
+        - Private Key PEM
+        - Full Certificate PEM with private key (e.g. VisualSVN Server)
+        - Separate Certificate PEM without private key (e.g. hMailServer)
+        - PFX for IIS unchanged, still need IIS certificate to revoke it (why have not researched)
+    - Added support for password entry
+    - Added attempt for Elevation if not run as administrator or UAC active
+    - All certificate files stored in a folder = Environment.CurrentDirectory + "\\Certificates"
+    - Assumes WinCertes.exe is installed to C:\Program Files\WinCertes or CWD.
+    - Certificate path is stored in registry but not yet read at startup. Once supported this would allow each set of certificates to be written to a different folder. The folder should have restricted access due to the potential existence of the private RSA key text file.
+    - Tested on Windows 10, Windows 2016
+    - TODO Ensure this readme matches the new code
+    - TODO Get github community to confirm IIS, DNS registration features work
 
 Requirements:
 - Windows Server 2008 R2 SP1 or higher (.Net 4.6.1 or higher), 64-bit
@@ -49,47 +72,82 @@ Command Line Options
 
 ```dos
 WinCertes.exe:
-  -s, --service=VALUE        the ACME Service URI to be used (optional,
-                               defaults to Let's Encrypt)
-  -e, --email=VALUE          the account email to be used for ACME requests (
+  -n, --certname=VALUE       Unique Certificate name excluding file extension  
+                               e.g. "wincertes.com" (default=first domain name)
+  -s, --service=VALUE        ACME Service URI to be used (optional, defaults to
+                               Let's Encrypt)
+  -e, --email=VALUE          Account email to be used for ACME requests  (
                                optional, defaults to no email)
-  -d, --domain=VALUE         the domain(s) to enroll (mandatory)
-  -w, --webserver[=ROOT]     toggles the local web server use and sets its ROOT
+  -d, --domain=VALUE         Domain(s) to enroll (mandatory)
+  -w, --webserver[=ROOT]     Toggles the local web server use and sets its ROOT
                                directory (default c:\inetpub\wwwroot).
                                Activates HTTP validation mode.
-  -p, --periodic             should WinCertes create the Windows Scheduler task
+  -p, --periodic             Should WinCertes create the Windows Scheduler task
                                to handle certificate renewal (default=no)
-  -b, --bindname=VALUE       IIS site name to bind the certificate to, e.g. "
-                               Default Web Site". Defaults to no binding.
+  -b, --bindname=VALUE       IIS site name to bind the certificate to,       e.
+                               g. "Default Web Site". Defaults to no binding.
   -f, --scriptfile=VALUE     PowerShell Script file e.g. "C:\Temp\script.ps1"
                                to execute upon successful enrollment (default=
                                none)
-  -a, --standalone           should WinCertes create its own WebServer for
+  -x, --exportcerts          Should WinCertes export the certificates including
+                               PEM format.
+  -a, --standalone           Activate WinCertes internal WebServer for
                                validation. Activates HTTP validation mode.
                                WARNING: it will use port 80 unless -l is
                                specified.
-  -r, --revoke[=REASON]      should WinCertes revoke the certificate identified
-                               by its domains (to be used only with -d). REASON
-                               is an optional integer between 0 and 5.
-  -k, --csp=VALUE            import the certificate into specified csp. By
+  -r, --revoke[=REASON]      Should WinCertes revoke the certificate identified
+                               by its domains (to be used only with -d or -n).
+                               REASON is an optional integer between 0 and 5.
+  -k, --csp=VALUE            Import the certificate into specified csp. By
                                default WinCertes imports in the default CSP.
-  -t, --renewal=N            trigger certificate renewal N days before
-                               expiration
-  -l, --listenport=N         listen on port N in standalone mode (for use with -
+  -t, --renewal=N            Trigger certificate renewal N days before
+                               expiration, default 30
+  -l, --listenport=N         Listen on port N in standalone mode (for use with -
                                a switch, default 80)
-      --show                 show current configuration parameters
-      --reset                reset all configuration parameters
-      --extra                manages one additonal certificate instead of the
-                               default one, with its own settings
-      --no-csp               does not import the certificate into CSP. Use with
-                               caution, at your own risks
+      --dnscreatekeys        Create all DNS values in the registry and exit.
+                               Use with --certname. Manually edit registry or
+                               include on command line
+      --dnstype=VALUE        DNS Validator type: acme-dns, win-dns
+      --dnsurl=VALUE         DNS Server URL: http://blah.net
+      --dnshost=VALUE        DNS Server Host
+      --dnsuser=VALUE        DNS Server Username
+      --dnspassword=VALUE    DNS Server Password
+      --dnskey=VALUE         DNS Server Account Key
+      --dnssubdomain=VALUE   DNS Server SubDomain
+      --dnszone=VALUE        DNS Server Zone
+      --debug                Enable extra debug logging
+      --extra                Deprecated: Manages certificate name "extra".
+                               Please use -n instead
+      --no-csp               Disable import of the certificate into CSP. Use
+                               with caution, at your own risk. REVOCATION WILL
+                               NOT WORK IN THAT MODE.
+      --password=VALUE       Certificate password min 16 characters (default=
+                               random)
+      --reset                Reset all configuration parameters for --certname
+                               and exit
+      --show                 Show current configuration parameters and exit
 
-Typical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p
+
+Typical usage:
+
+  "WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p"
+
 This will automatically create and register account with email me@example.com, and
-request the certificate for test1.example.com and test2.example.com, then import it into
-Windows Certificate store (machine context), and finally set a Scheduled Task to manage renewal.
+request the certificate for (test1.example.com, test2.example.com), then import it
+into Windows Certificate store, create a Scheduled Task to manage renewal, then save
+settings to registry [HKLM\SOFTWARE\WinCertes\test1.example.com]. Once the settings
+are saved to registry WinCertes.exe may be run with -n test1.example.com to re-use
+the same settings. e.g.
 
-"WinCertes.exe -d test1.example.com -d test2.example.com -r" will revoke that certificate.
+  "WinCertes.exe -n test1.example.com" will renew that certificate.
+  "WinCertes.exe -n test1.example.com -r" will revoke that certificate.
+
+Be sure to revoke a certificate before deleting registry keys via --reset
+
+  "WinCertes.exe -n test1.example.com --reset" will revoke that certificate.
+
+For debugging use: -s https://acme-staging-v02.api.letsencrypt.org/directory
+
 ```
 
 Using Non-Let's Encrypt CA

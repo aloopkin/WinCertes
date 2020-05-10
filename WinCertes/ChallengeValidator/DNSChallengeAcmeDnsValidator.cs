@@ -4,20 +4,21 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using WinCertes;
 
 namespace WinCertes.ChallengeValidator
 {
     class DNSChallengeAcmeDnsValidator : IDNSChallengeValidator
     {
-        private IConfig _config;
+        private WinCertesOptions _options;
 
         /// <summary>
         /// Constructor for the ACME-DNS DNS challenge validator
         /// </summary>
         /// <param name="config"></param>
-        public DNSChallengeAcmeDnsValidator(IConfig config)
+        public DNSChallengeAcmeDnsValidator()
         {
-            _config = config;
+            _options = Program._winCertesOptions;
         }
 
         /// <summary>
@@ -25,21 +26,25 @@ namespace WinCertes.ChallengeValidator
         /// </summary>
         /// <param name="dnsKeyName"></param>
         /// <param name="dnsKeyValue"></param>
-        /// <returns></returns>
+        /// <returns>True if challenge was successful</returns>
         public bool PrepareChallengeForValidation(string dnsKeyName, string dnsKeyValue)
         {
-            var DNSServerURL = _config.ReadStringParameter("DNSServerURL");
-            var DNSServerUser = _config.ReadStringParameter("DNSServerUser");
-            var DNSServerKey = _config.ReadStringParameter("DNSServerKey");
-            var DNSServerSubDomain = _config.ReadStringParameter("DNSServerSubDomain");
+            try
+            {
+                if (!Uri.IsWellFormedUriString(_options.DNSServerURL, UriKind.Absolute)) 
+                    return false;
+                HttpClient client = new HttpClient();
+                var content = new StringContent($"{{ \"subdomain\": \"{_options.DNSServerSubDomain}\", \"txt\": \"{dnsKeyValue}\" }}", Encoding.UTF8, "application/json");
+                content.Headers.Add("X-Api-User", _options.DNSServerUser);
+                content.Headers.Add("X-Api-Key", _options.DNSServerKey);
 
-            HttpClient client = new HttpClient();
-            var content = new StringContent($"{{ \"subdomain\": \"{DNSServerSubDomain}\", \"txt\": \"{dnsKeyValue}\" }}", Encoding.UTF8, "application/json");
-            content.Headers.Add("X-Api-User", DNSServerUser);
-            content.Headers.Add("X-Api-Key", DNSServerKey);
-
-            var response = client.PostAsync(DNSServerURL, content).Result;
-            return (response.StatusCode == System.Net.HttpStatusCode.OK);
+                var response = client.PostAsync(_options.DNSServerURL, content).Result;
+                return (response.StatusCode == System.Net.HttpStatusCode.OK);
+            } 
+            catch (Exception exp) {
+                Program._logger.Error($"PrepareChallengeForValidation: {exp.Message}");
+            }
+            return false;
         }
     }
 }

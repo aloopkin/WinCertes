@@ -18,10 +18,22 @@ namespace WinCertes.ChallengeValidator
         {
             IHTTPChallengeValidator challengeValidator = null;
             if (standalone) {
-                if (!CheckAvailableServerPort(httpPort)) return null;
+                if (!CheckAvailableServerPort(httpPort))
+                {
+                    Program._logger.Warn("HTTP Standalone activation selected, but port {0} was not available. No HTTP session established", httpPort);
+                    return null;
+                }
                 challengeValidator = new HTTPChallengeWebServerValidator(httpPort);
-            } else if (webRoot != null) {
+                if (challengeValidator != null) Program._logger.Info("HTTP Challenge WebServer Validator established, listening on Port({0})", httpPort);
+            }
+            else if (webRoot != null)
+            {
                 challengeValidator = new HTTPChallengeFileValidator(webRoot);
+                if (challengeValidator != null) Program._logger.Info("HTTP Challenge File Validator established");
+            }
+            else
+            {
+                Program._logger.Warn("HTTP Web Server Root path was not specified");
             }
             return challengeValidator;
         }

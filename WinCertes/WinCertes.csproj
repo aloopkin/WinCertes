@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{82F5A366-760D-4108-B48A-C682D68085E6}</ProjectGuid>
+    <ProjectGuid>{3350A673-8D5A-4924-A1E8-2D8A0C14A9D0}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>WinCertes</RootNamespace>
     <AssemblyName>WinCertes</AssemblyName>
@@ -50,12 +50,15 @@
   </PropertyGroup>
   <PropertyGroup />
   <PropertyGroup />
+  <PropertyGroup>
+    <ApplicationIcon>Robot-network.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BouncyCastle.Crypto, Version=1.8.5.0, Culture=neutral, PublicKeyToken=0e99375e54769942, processorArchitecture=MSIL">
-      <HintPath>..\packages\Portable.BouncyCastle.1.8.5.2\lib\net40\BouncyCastle.Crypto.dll</HintPath>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.6.0, Culture=neutral, PublicKeyToken=0e99375e54769942, processorArchitecture=MSIL">
+      <HintPath>..\packages\Portable.BouncyCastle.1.8.6\lib\net40\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
-    <Reference Include="Certes, Version=2.3.3.0, Culture=neutral, PublicKeyToken=308b9c08e7effcb1, processorArchitecture=MSIL">
-      <HintPath>..\packages\Certes.2.3.3\lib\net45\Certes.dll</HintPath>
+    <Reference Include="Certes, Version=2.3.4.0, Culture=neutral, PublicKeyToken=308b9c08e7effcb1, processorArchitecture=MSIL">
+      <HintPath>..\packages\Certes.2.3.4\lib\net45\Certes.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Web.Administration, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Web.Administration.7.0.0.0\lib\net20\Microsoft.Web.Administration.dll</HintPath>
@@ -122,13 +125,30 @@
     <Compile Include="ChallengeValidator\HTTPChallengeWebServerValidator.cs" />
     <Compile Include="ChallengeValidator\IHTTPChallengeValidator.cs" />
     <Compile Include="Config\IConfig.cs" />
+    <Compile Include="HandleOptions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils.cs" />
+    <Compile Include="Config\WinCertesOptions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="Samples\CreateCertificate.cmd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\RevokeCertificate.cmd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\ManageCertificate.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\ManageCertificateScript.cmd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Samples\UpdateCertificate.cmd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6.1">
@@ -141,6 +161,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Robot-network.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

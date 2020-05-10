@@ -2,6 +2,28 @@
 
 Advanced configuration of WinCertes can be perfomed using Registry settings. These settings are located in `HKLM\SOFTWARE\WinCertes`
 
+cshawky\WinCertes also supports creation of the registry keys from the command line without further processing. e.g.: 
+```dos
+    WinCertes --creatednskeys --certname mail.mydomain.com
+```
+The parameters may also be entered on the command line like:
+```dos
+  -n, --certname=VALUE       Unique Certificate name excluding file extension  
+                               e.g. "wincertes.com" (default=first domain name)
+      --dnscreatekeys        Create all DNS values in the registry and exit.
+                               Use with --certname. Manually edit registry or
+                               include on command line
+      --dnstype=VALUE        DNS Validator type: acme-dns, win-dns
+      --dnsurl=VALUE         DNS Server URL: http://blah.net
+      --dnshost=VALUE        DNS Server Host
+      --dnsuser=VALUE        DNS Server Username
+      --dnspassword=VALUE    DNS Server Password
+      --dnskey=VALUE         DNS Server Account Key
+      --dnssubdomain=VALUE   DNS Server SubDomain
+      --dnszone=VALUE        DNS Server Zone
+```
+All parameters are saved to the registry under `HKLM\SOFTWARE\WinCertes\{certname}`
+
 General Settings
 -------------
 Some settings are configured automatically using the command line, and thus won't be detailed here. Only additional settings are mentioned

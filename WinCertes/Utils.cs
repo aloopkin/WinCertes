@@ -4,15 +4,18 @@ using NLog.Config;
 using NLog.Targets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Windows;
 using TS = Microsoft.Win32.TaskScheduler;
-
 
 namespace WinCertes
 {
@@ -150,31 +153,83 @@ namespace WinCertes
         }
 
         /// <summary>
+        /// Attempt elevation if nto running as administrator
+        /// </summary>
+        public static void AdminRelauncher()
+        {
+            if (!IsAdministrator())
+            {
+                ProcessStartInfo proc = new ProcessStartInfo();
+                proc.UseShellExecute = true;
+                proc.WorkingDirectory = Environment.CurrentDirectory;
+                proc.FileName = Assembly.GetEntryAssembly().CodeBase;
+
+                proc.Verb = "runas";
+
+                try
+                {
+                    Process.Start(proc);
+                }
+                catch (Exception ex)
+                {
+                    Program._logger.Info("This program must be run as an administrator! \n\n" + ex.ToString());
+                }
+                System.Environment.Exit(-1);
+            }
+        }
+        /// <summary>
         /// Configures the console logger
         /// </summary>
         /// <param name="logPath">the path to the directory where to store the log files</param>
-        public static void ConfigureLogger(string logPath)
+        public static void ConfigureLogger(string logPath, string[] args)
         {
+            if (logPath == null)
+                logPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + "\\WinCertes";
 
             var config = new LoggingConfiguration();
-
+            LogLevel level = LogLevel.Info;
+            if (args != null) foreach (var arg in args) if (arg.ToString().IndexOf("debug", StringComparison.InvariantCultureIgnoreCase) > 0) level = LogLevel.Debug;
 #if DEBUG
-            config.LoggingRules.Add(new LoggingRule("*", LogLevel.Debug, new ColoredConsoleTarget { Layout = "[DEBUG] ${message}${onexception:${newline}${exception:format=tostring}}" }));
+            config.LoggingRules.Add(new LoggingRule("*", level, new ColoredConsoleTarget { Name = "WinCertes Console", Layout = "[DEBUG] ${message}${onexception:${newline}${exception:format=tostring}}" }));
+#else
+            config.LoggingRules.Add(new LoggingRule("*", level, new ColoredConsoleTarget { Name = "WinCertes Console", Layout = "${message}" }));
 #endif
-            config.LoggingRules.Add(new LoggingRule("*", LogLevel.Info, new ColoredConsoleTarget { Layout = "${message}" }));
 
             config.LoggingRules.Add(
-                new LoggingRule("*", LogLevel.Info, new FileTarget
+                new LoggingRule("*", level, new FileTarget
                 {
+                    Name = "WinCertes",
                     FileName = logPath + "\\wincertes.log",
                     ArchiveAboveSize = 500000,
                     ArchiveFileName = logPath + "\\wincertes.old.log",
-                    MaxArchiveFiles = 1,
-                    ArchiveOldFileOnStartup = false,
-                    Layout = "${longdate}|${level:uppercase=true}|${message}${onexception:${newline}${exception:format=tostring}}"
+                    MaxArchiveFiles = 4,
+                    ArchiveOldFileOnStartup = true,
+                    Layout = "${longdate}|${level:uppercase=true}| ${message}${onexception:${newline}${exception:format=tostring}}"
                 }));
 
             LogManager.Configuration = config;
+        }
+
+        /// <summary>
+        /// Change the log level for NLog after the command line parameters have been read
+        /// </summary>
+        /// <param name="logLevel">The new log level</param>
+        /// <param name="regex">Regular expression for Log target name. e.g. "*"</param>
+        public static void SetLogLevel(LogLevel logLevel, string regex = "wincertes*")
+        {
+            IList<NLog.Config.LoggingRule> rules = LogManager.Configuration.LoggingRules;
+            Regex validator = new Regex(regex, RegexOptions.IgnoreCase);
+            //foreach (var rule in rules.Where(x => validator.IsMatch(x.Targets[0].Name)))
+            foreach (var rule in rules)
+            {
+                if (validator.IsMatch(rule.Targets[0].Name))
+                {
+                    if (!rule.IsLoggingEnabledForLevel(logLevel))
+                    {
+                        rule.EnableLoggingForLevel(logLevel);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -224,7 +279,7 @@ namespace WinCertes
                 {
                     foreach (TS.Task t in ts.RootFolder.Tasks)
                     {
-                        if (t.Name.StartsWith("WinCertes"))
+                        if (t.Name.StartsWith("WinCertes", StringComparison.InvariantCultureIgnoreCase))
                             return true;
                     }
                 }
@@ -245,7 +300,7 @@ namespace WinCertes
                 {
                     foreach (TS.Task t in ts.RootFolder.Tasks)
                     {
-                        if (t.Name.StartsWith("WinCertes"))
+                        if (t.Name.StartsWith("WinCertes", StringComparison.InvariantCultureIgnoreCase))
                             ts.RootFolder.DeleteTask(t.Name, false);
                     }
                 }
@@ -306,7 +361,9 @@ namespace WinCertes
             wDomains.Sort();
             string friendly = wDomains[0].Replace(@"*", "").Replace("-", "").Replace(":", "").Replace(".", "");
             friendly += "0000000000000000";
-            return friendly.Substring(0, 16);
+            friendly = friendly.Substring(0, 16);
+            Program._logger.Info("Friendly name: {0}", friendly);
+            return friendly;
         }
 
         /// <summary>

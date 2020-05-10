@@ -2,8 +2,10 @@
 using Certes.Acme;
 using Certes.Acme.Resource;
 using NLog;
+using Org.BouncyCastle.Asn1.X509;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
@@ -18,31 +20,26 @@ namespace WinCertes
     /// </summary>
     public class CertesSettings
     {
-        public Uri ServiceURI { get; set; }
-        public string AccountEmail { get; set; }
-        public IKey AccountKey { get; set; }
     }
 
     /// <summary>
     /// CertesWrapper class: a wrapper around Certes library, that simplifies handling ACME requests in the context of WinCertes
     /// </summary>
     /// <seealso cref="Certes"/>
-    public class CertesWrapper
+    internal class CertesWrapper
     {
-        public string PfxPassword { get; set; }
-        private static readonly ILogger logger = LogManager.GetLogger("WinCertes.CertesWrapper");
-        private IConfig _config;
-        private CertesSettings _settings;
+        private static readonly ILogger logger = Program._logger; // LogManager.GetLogger("WinCertes.CertesWrapper");
         private AcmeContext _acme;
         private IOrderContext _orderCtx = null;
         private HttpClient _httpClient = null;
+        private WinCertesOptions _options;
 
         /// <summary>
-        /// Initializes Certes library context
+        /// Initializes Certes library context using ServiceUri, AccountKey
         /// </summary>
         private void InitCertes()
         {
-            _acme = new AcmeContext(_settings.ServiceURI, _settings.AccountKey, new AcmeHttpClient(_settings.ServiceURI, _httpClient));
+            _acme = new AcmeContext(_options.ServiceUri, KeyFactory.FromPem(_options.AccountKey), new AcmeHttpClient(_options.ServiceUri, _httpClient));
         }
 
         /// <summary>
@@ -50,44 +47,27 @@ namespace WinCertes
         /// </summary>
         /// <param name="serviceUri">The ACME service URI (endin in /directory). If null, defaults to Let's encrypt</param>
         /// <param name="accountEmail">The email address to be registered within the ACME account. If null, no email will be used</param>
-        public CertesWrapper(string serviceUri = null, string accountEmail = null)
+        internal CertesWrapper()
         {
-            _settings = new CertesSettings();
-            _config = new RegistryConfig();
+            _options = Program._winCertesOptions;
 
-            // Let's initialize the password
-            PfxPassword = Guid.NewGuid().ToString("N").Substring(0, 16);
-            logger.Debug($"PFX password will be: {PfxPassword}");
+            logger.Debug($"Uri: {_options.ServiceUri.ToString()}");
+            // Todo - Encrypt this in registry
+            //logger.Debug($"PFX password will be: {_options.PfxPassword}");
 
-            // Dealing with Server URI
-            if (serviceUri != null) {
-                _settings.ServiceURI = new Uri(serviceUri);
-            } else {
-                _settings.ServiceURI = WellKnownServers.LetsEncryptV2;
+            // Basic check of private key
+            string key = _options.AccountKey;
+            if ( key == null || key.Length < 1500 )
+            {
+                // Create new private key
+                _options.AccountKey = KeyFactory.NewKey(KeyAlgorithm.RS256).ToPem();
             }
-            // Dealing with account email
-            _settings.AccountEmail = accountEmail;
-            // Dealing with key
-            if (_config.ReadStringParameter("accountKey") != null) {
-                _settings.AccountKey = KeyFactory.FromPem(_config.ReadStringParameter("accountKey"));
-            } else {
-                _settings.AccountKey = KeyFactory.NewKey(KeyAlgorithm.RS256);
-                _config.WriteStringParameter("accountKey", _settings.AccountKey.ToPem());
-            }
+
             // Instantiating HTTP Client
             AssemblyName certesAssembly = typeof(AcmeContext).Assembly.GetName();
             AssemblyName winCertesAssembly = typeof(Program).Assembly.GetName();
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Add("User-Agent", $"WinCertes/{winCertesAssembly.Version.ToString()} (Certes/{certesAssembly.Version.ToString()}; {Environment.OSVersion.VersionString})");
-        }
-
-        /// <summary>
-        /// Is the ACME account set on this computer registered into the ACME service ?
-        /// </summary>
-        /// <returns>true if registered, false otherwise</returns>
-        public bool IsAccountRegistered()
-        {
-            return (_config.ReadIntParameter("registered") == 1);
         }
 
         /// <summary>
@@ -111,17 +91,24 @@ namespace WinCertes
         /// <returns>true if registration is successful, false otherwise</returns>
         public async Task<bool> RegisterNewAccount()
         {
+            WinCertesOptions _options = Program._winCertesOptions;
+
             try {
                 InitCertes();
                 Certes.Acme.Resource.Directory directory = await _acme.GetDirectory();
                 InitCertes();
-                IAccountContext accountCtx = await _acme.NewAccount(_settings.AccountEmail, true);
-                _config.WriteIntParameter("registered", 1);
-                logger.Info($"Successfully registered account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}");
-                if ((directory.Meta != null) && (directory.Meta.TermsOfService != null)) logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
+                IAccountContext accountCtx = await _acme.NewAccount(_options.AccountEmail, true);
+                _options.Registered = true;
+                logger.Info($"Successfully registered account {_options.AccountEmail} with certificate authority {_options.ServiceUri.ToString()}");
+                if ((directory.Meta != null) && (directory.Meta.TermsOfService != null))
+                {
+                    logger.Info($"Please check the ACME Service ToS at: {directory.Meta.TermsOfService.ToString()}");
+                }
                 return true;
-            } catch (Exception exp) {
-                logger.Error($"Failed to register account {_settings.AccountEmail} with certificate authority {_settings.ServiceURI.ToString()}: {ProcessCertesException(exp)}");
+            }
+            catch (Exception exp)
+            {
+                logger.Error($"Failed to register account {_options.AccountEmail} with certificate authority {_options.ServiceUri.ToString()}: {ProcessCertesException(exp)}");
                 return false;
             }
         }
@@ -137,7 +124,7 @@ namespace WinCertes
         /// </remarks>
         /// <param name="domains">The list of domains to be registered and validated</param>
         /// <param name="httpChallengeValidator">The object used for challenge validation</param>
-        /// <returns></returns>
+        /// <returns>True if successful</returns>
         public async Task<bool> RegisterNewOrderAndVerify(IList<string> domains, IHTTPChallengeValidator httpChallengeValidator, IDNSChallengeValidator dnsChallengeValidator)
         {
             try {
@@ -156,12 +143,14 @@ namespace WinCertes
                     InitCertes();
                     await ValidateAuthz(authz, httpChallengeValidator, dnsChallengeValidator);
                 }
+                _options.CertificateChallenged = true;
                 // If we are here, it means order was properly created, and authorizations & challenges were properly verified.
                 logger.Info($"Generated orders and validated challenges for domains: {String.Join(",", domains)}");
                 return true;
             } catch (Exception exp) {
                 logger.Debug(exp, "Error while trying to register and validate order");
                 logger.Error($"Failed to register and validate order with CA: {ProcessCertesException(exp)}");
+                _options.CertificateChallenged = false;
                 return false;
             }
         }
@@ -314,17 +303,20 @@ namespace WinCertes
         /// <summary>
         /// Retrieves the certificate from the ACME service. This method also generates the key and the CSR.
         /// </summary>
-        /// <param name="commonName">the CN of the certificate to be requested</param>
-        /// <param name="pathForPfx">Path where the resulting PFX/PKCS#12 file will be generated</param>
+        /// <param name="domains">Full Domain list</param>
+        /// <param name="fullPathForPfx">The full file path where the resulting PFX/PKCS#12 file will be generated</param>
         /// <param name="pfxFriendlyName">Friendly name for the resulting PFX/PKCS#12</param>
+        /// <param name="writePEM">Export all certificates</param>
         /// <returns>The name of the generated PFX/PKCS#12 file, or null in case of error</returns>
-        public async Task<string> RetrieveCertificate(IList<string> domains, string pathForPfx, string pfxFriendlyName)
+        public async Task<string> RetrieveCertificate(IList<string> domains, string fullPathForPfx, string pfxFriendlyName, bool writePEM = false)
         {
             try {
+                string pathForPfx = Path.GetDirectoryName(fullPathForPfx);
                 if (_orderCtx == null) throw new Exception("Do not call RetrieveCertificate before RegisterNewOrderAndVerify");
                 if (!System.IO.Directory.Exists(pathForPfx)) throw new Exception("Directory for PFX writing do not exists");
 
                 InitCertes();
+
                 // Let's generate a new key (RSA is good enough IMHO)
                 IKey certKey = KeyFactory.NewKey(KeyAlgorithm.RS256);
                 // Then let's generate the CSR
@@ -335,21 +327,46 @@ namespace WinCertes
                 // and finalize the ACME order
                 var finalOrder = await _orderCtx.Finalize(csr.Generate());
                 // Now we can fetch the certificate
-                CertificateChain cert = await _orderCtx.Download();
+                CertificateChain certChain = await _orderCtx.Download();
+                _options.CertificateGenerated = true;
+                // .cer: Full Certificate with Private Key. e.g. Visual SVN
+                string cer = certChain.ToPem(certKey);
+                // .pem: Full Certificate without Private Key e.g. hMailServer
+                string pem = certChain.ToPem();
+                // .pkey: Private key in separate PEM file.
+                string pkey = certKey.ToPem();
+
+                var fileName = Path.GetFileNameWithoutExtension(fullPathForPfx);
+                string pfxName = fileName + ".pfx";
+                string pfxPath = pathForPfx + "\\" + pfxName;
+                string cerPath = pathForPfx + "\\" + fileName + ".cer";
+                string pemPath = pathForPfx + "\\" + fileName + ".pem";
+                string pkeyPath = pathForPfx + "\\" + fileName + ".pkey";
 
                 // We build the PFX/PKCS#12
-                var pfx = cert.ToPfx(certKey);
+                var pfx = certChain.ToPfx(certKey);
                 pfx.AddIssuers(GetCACertChainFromStore());
-                var pfxBytes = pfx.Build(pfxFriendlyName, PfxPassword);
-                var pfxName = Guid.NewGuid().ToString() + ".pfx";
+                var pfxBytes = pfx.Build(pfxFriendlyName, _options.PfxPassword);
 
                 // We write the PFX/PKCS#12 to file
-                System.IO.File.WriteAllBytes(pathForPfx + "\\" + pfxName, pfxBytes);
-                logger.Info($"Retrieved certificate from the CA. The certificate is in {pfxName}");
+                System.IO.File.WriteAllBytes(fullPathForPfx, pfxBytes);
+                logger.Info($"Output complete certificate PFX. The certificate is in {fullPathForPfx}");
 
+                if (writePEM)
+                {
+                    System.IO.File.WriteAllText(cerPath, cer);
+                    logger.Info($"Output complete certificate PEM. The certificate is in {cerPath}");
+
+                    System.IO.File.WriteAllText(pemPath, pem);
+                    logger.Info($"Output public certificate PEM. The certificate is in {pemPath}");
+
+                    System.IO.File.WriteAllText(pkeyPath, pkey);
+                    logger.Info($"Output Private certificate PEM. The certificate is in {pkeyPath}");
+                }
                 return pfxName;
             } catch (Exception exp) {
                 logger.Error($"Failed to retrieve certificate from CA: {ProcessCertesException(exp)}");
+                _options.CertificateGenerated = false;
                 return null;
             }
         }
