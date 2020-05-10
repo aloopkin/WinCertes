@@ -1,4 +1,4 @@
-# WinCertes2 - ACME Client for Windows
+# WinCertes - ACME Client for Windows
 
 WinCertes is a simple ACMEv2 Client for Windows, able to manage the automatic issuance and renewal of SSL Certificates, for IIS or other web servers. It is based on [Certes](https://github.com/fszlin/certes) Library and [Certes](https://github.com/aloopkin/WinCertes). Pre-compiled binaries are available from GitHub (just look for the standard GitHub menu entry).
 
@@ -26,6 +26,7 @@ WinCertes is a simple ACMEv2 Client for Windows, able to manage the automatic is
     - Tested on Windows 10, Windows 2016
     - TODO Ensure this readme matches the new code
     - TODO Get github community to confirm IIS, DNS registration features work
+    - TODO .\Samples\ scripts were drafted late, not tested before all of the changes above. Update and simplify scripts. Add scheduled task script to the mix that includes example for start/stop of IIS, Firewall rules, hMailServer and VisualSVN.
 
 Requirements:
 - Windows Server 2008 R2 SP1 or higher (.Net 4.6.1 or higher), 64-bit
