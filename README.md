@@ -116,7 +116,11 @@ Param(
                 [Parameter(Mandatory=$True,Position=1)]
                 [string]$pfx,
                 [Parameter(Mandatory=$True)]
-                [string]$pfxPassword
+                [string]$pfxPassword,
+                [Parameter(Mandatory=$True)]
+                [string]$cer,
+                [Parameter(Mandatory=$True)]
+                [string]$key
                 )
 
 # Build the pfx object using file path and password
@@ -125,6 +129,10 @@ $mypfx = Get-PfxData -FilePath $pfx -Password $mypwd
 
 # Start the real work. Here we simply append the certificate DN to a text file
 $mypfx.EndEntityCertificates.Subject | Out-File -FilePath c:\temp\test.txt -Append
+
+# Copy certificate: here's an example for Apache
+Copy-Item -Path $cer -Destination C:\\Program\ Files\\Apache\ Group\\Apache2\\conf\\server.crt
+Copy-Item -Path $key -Destination C:\\Program\ Files\\Apache\ Group\\Apache2\\conf\\server.key
 ```
 
 About IIS Configuration
