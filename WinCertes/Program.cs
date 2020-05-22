@@ -121,7 +121,7 @@ namespace WinCertes
         private static bool _periodic = false;
         private static bool _show = false;
         private static bool _reset = false;
-        private static bool _extra = false;
+        private static int _extra = -1;
         private static OptionSet _options;
 
         private static readonly int ERROR = 1;
@@ -152,7 +152,7 @@ namespace WinCertes
                 { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v },
                 { "show", "show current configuration parameters", v=> _show = (v != null ) },
                 { "reset", "reset all configuration parameters", v=> _reset = (v != null ) },
-                { "extra", "manages one additonal certificate instead of the default one, with its own settings", v=> _extra = (v != null ) },
+                { "extra:", "manages additonnal certificate(s) instead of the default one, with its own settings. Add an integer index to extra optionnally", (int v) => _extra = v },
                 { "no-csp", "does not import the certificate into CSP. Use with caution, at your own risks. REVOCATION WILL NOT WORK IN THAT MODE.", v=> _winCertesOptions.noCsp = (v != null) }
             };
 
@@ -310,7 +310,7 @@ namespace WinCertes
 
             // Reset is a full reset !
             if (_reset) {
-                IConfig baseConfig = new RegistryConfig(false);
+                IConfig baseConfig = new RegistryConfig(-1);
                 baseConfig.DeleteAllParameters();
                 Utils.DeleteScheduledTasks();
                 return 0;

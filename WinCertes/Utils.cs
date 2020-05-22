@@ -229,7 +229,7 @@ namespace WinCertes
         /// </summary>
         /// <param name="domains"></param>
         /// <param name="taskName"></param>
-        public static void CreateScheduledTask(string taskName, List<string> domains, bool extra)
+        public static void CreateScheduledTask(string taskName, List<string> domains, int extra)
         {
             if (taskName == null) return;
             try
@@ -247,8 +247,8 @@ namespace WinCertes
                     td.Triggers.Add(new TS.DailyTrigger { DaysInterval = 2 });
                     String extraOpt = "";
 
-                    if (extra)
-                        extraOpt = "--extra ";
+                    if (extra>-1)
+                        extraOpt = "--extra="+extra.ToString()+" ";
                     // Create an action that will launch Notepad whenever the trigger fires
                     td.Actions.Add(new TS.ExecAction("WinCertes.exe", extraOpt + "-d " + String.Join(" -d ", domains), Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)));
 

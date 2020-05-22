@@ -19,7 +19,7 @@ namespace WinCertes
         /// <summary>
         /// Class constructor. if extra = false, builds the base config. if extra = true, builds the extra certificate config.
         /// </summary>
-        public RegistryConfig(bool extra = false)
+        public RegistryConfig(int extra = -1)
         {
             try
             {
@@ -27,15 +27,18 @@ namespace WinCertes
                 {
                     Registry.LocalMachine.OpenSubKey("SOFTWARE",true).CreateSubKey("WinCertes",true);
                 }
-                if (extra)
+                if (extra>-1)
                 {
-                    if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra") == null)
+                    string extraIndex = "";
+                    if (extra > 1)
+                        extraIndex = extra.ToString();
+                    if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra"+extraIndex) == null)
                     {
-                        _logger.Debug("Creating SubKey 'extra'");
-                        Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes",true).CreateSubKey("extra", true);
+                        _logger.Debug("Creating SubKey 'extra"+extraIndex+"'");
+                        Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes",true).CreateSubKey("extra"+extraIndex, true);
                     }
-                    _registryKey += @"\extra";
-                    _subKey += @"\extra";
+                    _registryKey += @"\extra"+extraIndex;
+                    _subKey += @"\extra"+extraIndex;
                 }
              }
             catch (Exception e)
