@@ -284,10 +284,12 @@ namespace WinCertes
         /// Removes specified files and logs it
         /// </summary>
         /// <param name="path"></param>
-        private static void RemoveFileAndLog(string path)
+        private static void RemoveFileAndLog(AuthenticatedPFX pfx)
         {
-            File.Delete(path);
-            _logger.Info($"Removed file from filesystem: {path}");
+            File.Delete(pfx.PfxFullPath);
+            File.Delete(pfx.PemCertPath);
+            File.Delete(pfx.PemKeyPath);
+            _logger.Info($"Removed files from filesystem: {pfx.PfxFullPath}, {pfx.PemCertPath}, {pfx.PemKeyPath}");
         }
 
         static int Main(string[] args)
@@ -333,10 +335,9 @@ namespace WinCertes
             if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
-            var pfxName = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
-            if (pfxName == null) return ERROR;
-            AuthenticatedPFX pfx = new AuthenticatedPFX(_winCertesPath + "\\" + pfxName, _certesWrapper.PfxPassword);
-            CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, ((_winCertesOptions.Csp == null)&&(!_winCertesOptions.noCsp)));
+            var pfx = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
+            if (pfx == null) return ERROR;
+             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, ((_winCertesOptions.Csp == null)&&(!_winCertesOptions.noCsp)));
             // Let's process the PFX into Windows Certificate objet.
             certificateStorageManager.ProcessPFX();
             // and we write its information to the WinCertes configuration
@@ -349,10 +350,10 @@ namespace WinCertes
             // Execute PowerShell Script (won't do anything if option is null)
             Utils.ExecutePowerShell(_winCertesOptions.ScriptFile, pfx);
             // Create the AT task that will execute WinCertes periodically (won't do anything if taskName is null)
-            Utils.CreateScheduledTask(taskName, _domains,_extra);
+            Utils.CreateScheduledTask(taskName, _domains, _extra);
 
             // Let's delete the PFX file
-            RemoveFileAndLog(pfx.PfxFullPath);
+            RemoveFileAndLog(pfx);
 
             return 0;
         }

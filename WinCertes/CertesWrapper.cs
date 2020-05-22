@@ -318,7 +318,7 @@ namespace WinCertes
         /// <param name="pathForPfx">Path where the resulting PFX/PKCS#12 file will be generated</param>
         /// <param name="pfxFriendlyName">Friendly name for the resulting PFX/PKCS#12</param>
         /// <returns>The name of the generated PFX/PKCS#12 file, or null in case of error</returns>
-        public async Task<string> RetrieveCertificate(IList<string> domains, string pathForPfx, string pfxFriendlyName)
+        public async Task<AuthenticatedPFX> RetrieveCertificate(IList<string> domains, string pathForPfx, string pfxFriendlyName)
         {
             try {
                 if (_orderCtx == null) throw new Exception("Do not call RetrieveCertificate before RegisterNewOrderAndVerify");
@@ -337,17 +337,28 @@ namespace WinCertes
                 // Now we can fetch the certificate
                 CertificateChain cert = await _orderCtx.Download();
 
-                // We build the PFX/PKCS#12
+                // We build the PFX/PKCS#12 and the cert/key as PEM
                 var pfx = cert.ToPfx(certKey);
+                var cer = cert.ToPem();
+                var key = certKey.ToPem();
                 pfx.AddIssuers(GetCACertChainFromStore());
                 var pfxBytes = pfx.Build(pfxFriendlyName, PfxPassword);
-                var pfxName = Guid.NewGuid().ToString() + ".pfx";
+                var fileName = pathForPfx + "\\" + Guid.NewGuid().ToString();
+                var pfxName = fileName + ".pfx";
+                var cerPath = fileName + ".cer";
+                var keyPath = fileName + ".key";
 
                 // We write the PFX/PKCS#12 to file
-                System.IO.File.WriteAllBytes(pathForPfx + "\\" + pfxName, pfxBytes);
+                System.IO.File.WriteAllBytes(pfxName, pfxBytes);
                 logger.Info($"Retrieved certificate from the CA. The certificate is in {pfxName}");
 
-                return pfxName;
+                // We write the PEMs to corresponding files
+                System.IO.File.WriteAllText(cerPath, cer);
+                System.IO.File.WriteAllText(keyPath, key);
+
+                AuthenticatedPFX authPFX = new AuthenticatedPFX(pfxName, PfxPassword, cerPath, keyPath);
+
+                return authPFX;
             } catch (Exception exp) {
                 logger.Error($"Failed to retrieve certificate from CA: {ProcessCertesException(exp)}");
                 return null;
