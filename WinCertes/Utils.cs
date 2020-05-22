@@ -5,12 +5,14 @@ using NLog.Targets;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Management.Automation.Runspaces;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Text;
+using System.Text.RegularExpressions;
 using TS = Microsoft.Win32.TaskScheduler;
 
 
@@ -131,9 +133,15 @@ namespace WinCertes
                 {
                     if (binding.Protocol == "https")
                     {
-                        binding.CertificateHash = certificate.GetCertHash();
-                        binding.CertificateStoreName = "MY";
-                        foundBinding = true;
+                        foreach (string sanDns in ParseSubjectAlternativeName(certificate))
+                        {
+                            if (binding.Host.Equals(sanDns, StringComparison.OrdinalIgnoreCase))
+                            {
+                                binding.CertificateHash = certificate.GetCertHash();
+                                binding.CertificateStoreName = "MY";
+                                foundBinding = true;
+                            }
+                        }
                     }
                 }
 
@@ -152,6 +160,29 @@ namespace WinCertes
                 logger.Error(e,$"Could not bind certificate to site {siteName}: {e.Message}");
                 return false;
             }
+        }
+
+        private static List<string> ParseSubjectAlternativeName(X509Certificate2 cert)
+        {
+            var result = new List<string>();
+            var subjectAlternativeName = cert.Extensions.Cast<X509Extension>()
+                                                .Where(n => n.Oid.FriendlyName.Equals("Subject Alternative Name", StringComparison.Ordinal))
+                                                .Select(n => new AsnEncodedData(n.Oid, n.RawData))
+                                                .Select(n => n.Format(true))
+                                                .FirstOrDefault();
+            if (subjectAlternativeName != null)
+            {
+                var alternativeNames = subjectAlternativeName.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                foreach (var alternativeName in alternativeNames)
+                {
+                    var groups = Regex.Match(alternativeName, @"^DNS Name=(.*)").Groups;
+                    if (groups.Count > 0 && !String.IsNullOrEmpty(groups[1].Value))
+                    {
+                        result.Add(groups[1].Value);
+                    }
+                }
+            }
+            return result;
         }
 
         /// <summary>
