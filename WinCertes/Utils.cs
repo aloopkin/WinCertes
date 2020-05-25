@@ -121,7 +121,6 @@ namespace WinCertes
             if (siteName == null) return false;
             try
             {
-                bool foundBinding = false;
                 ServerManager serverMgr = new ServerManager();
                 Site site = serverMgr.Sites[siteName];
                 if (site == null)
@@ -129,11 +128,12 @@ namespace WinCertes
                     logger.Error($"Could not find IIS site {siteName}");
                     return false;
                 }
-                foreach (Binding binding in site.Bindings)
+                foreach (string sanDns in ParseSubjectAlternativeName(certificate))
                 {
-                    if (binding.Protocol == "https")
+                    bool foundBinding = false;
+                    foreach (Binding binding in site.Bindings)
                     {
-                        foreach (string sanDns in ParseSubjectAlternativeName(certificate))
+                        if (binding.Protocol == "https")
                         {
                             if (binding.Host.Equals(sanDns, StringComparison.OrdinalIgnoreCase))
                             {
@@ -143,21 +143,23 @@ namespace WinCertes
                             }
                         }
                     }
+                    if (!foundBinding)
+                    {
+                        Binding binding = site.Bindings.Add("*:443:" + sanDns, certificate.GetCertHash(), "MY");
+                        binding.Protocol = "https";
+                    }
                 }
 
-                if (!foundBinding)
-                {
-                    Binding binding = site.Bindings.Add("*:443:", certificate.GetCertHash(), "MY");
-                    binding.Protocol = "https";
-                }
- 
-                site.ApplicationDefaults.EnabledProtocols = "http,https";
+                if (site.ApplicationDefaults.EnabledProtocols.Split(',').Contains("http"))
+                    site.ApplicationDefaults.EnabledProtocols = "http,https";
+                else
+                    site.ApplicationDefaults.EnabledProtocols = "https";
                 serverMgr.CommitChanges();
                 return true;
             }
             catch (Exception e)
             {
-                logger.Error(e,$"Could not bind certificate to site {siteName}: {e.Message}");
+                logger.Error(e, $"Could not bind certificate to site {siteName}: {e.Message}");
                 return false;
             }
         }
@@ -247,8 +249,8 @@ namespace WinCertes
                     td.Triggers.Add(new TS.DailyTrigger { DaysInterval = 2 });
                     String extraOpt = "";
 
-                    if (extra>-1)
-                        extraOpt = "--extra="+extra.ToString()+" ";
+                    if (extra > -1)
+                        extraOpt = "--extra=" + extra.ToString() + " ";
                     // Create an action that will launch Notepad whenever the trigger fires
                     td.Actions.Add(new TS.ExecAction("WinCertes.exe", extraOpt + "-d " + String.Join(" -d ", domains), Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)));
 
