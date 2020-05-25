@@ -37,11 +37,13 @@ namespace MSIPackaging
                               }
                               );
             project.GUID = new Guid("bb0a8e11-24a8-4d7e-a7d6-6fc5bd8166d2");
-            project.Version = Version.Parse("1.3.0");
+            project.Version = Version.Parse("1.4.0");
             project.LicenceFile = path + @"\MSIPackaging\Resources\gpl-3.0.rtf";
             project.BannerImage = path + @"\MSIPackaging\Resources\banner.png";
             project.BackgroundImage = path + @"\MSIPackaging\Resources\background.png";
             project.Platform = Platform.x64;
+            project.InstallScope = InstallScope.perMachine;
+            project.ControlPanelInfo.Manufacturer = "Evertrust";
             Compiler.BuildMsi(project);
         }
     }
