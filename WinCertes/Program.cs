@@ -155,7 +155,7 @@ namespace WinCertes
                 { "l|listenport=", "listen on port {N} in standalone mode (for use with -a switch, default 80)", (int v) => _winCertesOptions.HttpPort = v },
                 { "show", "show current configuration parameters", v=> _show = (v != null ) },
                 { "reset", "reset all configuration parameters", v=> _reset = (v != null ) },
-                { "extra:", "manages additonnal certificate(s) instead of the default one, with its own settings. Add an integer index to extra optionnally", (int v) => _extra = v },
+                { "extra:", "manages additional certificate(s) instead of the default one, with its own settings. Add an integer index optionally to manage more certs.", (int v) => _extra = v },
                 { "no-csp", "does not import the certificate into CSP. Use with caution, at your own risks. REVOCATION WILL NOT WORK IN THAT MODE.", v=> _winCertesOptions.noCsp = (v != null) }
             };
 

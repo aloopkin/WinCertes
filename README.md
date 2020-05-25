@@ -79,8 +79,9 @@ WinCertes.exe:
                                a switch, default 80)
       --show                 show current configuration parameters
       --reset                reset all configuration parameters
-      --extra                manages one additonal certificate instead of the
-                               default one, with its own settings
+      --extra[=VALUE]        manages additional certificate(s) instead of the
+                               default one, with its own settings. Add an
+                               integer index optionally to manage more certs.
       --no-csp               does not import the certificate into CSP. Use with
                                caution, at your own risks
 
