@@ -23,27 +23,50 @@ namespace WinCertes
         {
             try
             {
-                if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes") == null)
+                // First we check if WinCertes key is there
+                RegistryKey winCertesKey = Registry.LocalMachine.OpenSubKey("SOFTWARE", true).OpenSubKey("WinCertes", RegistryKeyPermissionCheck.ReadWriteSubTree, RegistryRights.FullControl);
+                if (winCertesKey == null)
                 {
-                    Registry.LocalMachine.OpenSubKey("SOFTWARE",true).CreateSubKey("WinCertes",true);
+                    // and if not, we create it
+                    Registry.LocalMachine.OpenSubKey("SOFTWARE", true).CreateSubKey("WinCertes", RegistryKeyPermissionCheck.ReadWriteSubTree);
+                    winCertesKey = Registry.LocalMachine.OpenSubKey("SOFTWARE", true).OpenSubKey("WinCertes", RegistryKeyPermissionCheck.ReadWriteSubTree, RegistryRights.FullControl);
                 }
-                if (extra>-1)
+                // Let's fix the permissions
+                RegistrySecurity winCertesKeySec = winCertesKey.GetAccessControl(AccessControlSections.All);
+                // First we remove the inheritence
+                winCertesKeySec.SetAccessRuleProtection(true, false);
+                RegistrySecurity security = Registry.LocalMachine.OpenSubKey("SOFTWARE", false).GetAccessControl(AccessControlSections.Access);
+                // Copy rules from parent ("HKLM\Software"), except user access
+                foreach (RegistryAccessRule rule in security.GetAccessRules(true, true, typeof(NTAccount)))
+                {
+                    try
+                    {
+                        // Copy all relevant rules except user
+                        if (rule.IdentityReference.Value.IndexOf("Users", StringComparison.InvariantCultureIgnoreCase) < 0)
+                        {
+                            winCertesKeySec.AddAccessRule(rule);
+                        }
+                    }
+                    catch { }
+                }
+                winCertesKey.SetAccessControl(winCertesKeySec);
+                if (extra > -1)
                 {
                     string extraIndex = "";
                     if (extra > 1)
                         extraIndex = extra.ToString();
-                    if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra"+extraIndex) == null)
+                    if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra" + extraIndex) == null)
                     {
-                        _logger.Debug("Creating SubKey 'extra"+extraIndex+"'");
-                        Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes",true).CreateSubKey("extra"+extraIndex, true);
+                        _logger.Debug("Creating SubKey 'extra" + extraIndex + "'");
+                        Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes", true).CreateSubKey("extra" + extraIndex, RegistryKeyPermissionCheck.ReadWriteSubTree);
                     }
-                    _registryKey += @"\extra"+extraIndex;
-                    _subKey += @"\extra"+extraIndex;
+                    _registryKey += @"\extra" + extraIndex;
+                    _subKey += @"\extra" + extraIndex;
                 }
-             }
+            }
             catch (Exception e)
             {
-                _logger.Warn(e,$"Warning: Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
+                _logger.Warn(e, $"Warning: Could not open/create registry subkey: {e.Message}. We'll try to continue anyway.");
             }
         }
 
@@ -200,7 +223,7 @@ namespace WinCertes
         {
             if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra") != null)
             {
-                Registry.LocalMachine.OpenSubKey(_subKey,true).DeleteSubKeyTree("extra");
+                Registry.LocalMachine.OpenSubKey(_subKey, true).DeleteSubKeyTree("extra");
             }
             foreach (string key in Registry.LocalMachine.OpenSubKey(_subKey).GetValueNames())
             {
