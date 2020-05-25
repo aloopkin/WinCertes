@@ -4,7 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using WinCertes.ChallengeValidator;
@@ -87,7 +89,7 @@ namespace WinCertes
                 return;
             }
             IDNSChallengeValidator dnsChallengeValidator = DNSChallengeValidatorFactory.GetDNSChallengeValidator(config);
-            Console.WriteLine("Service URI:\t" + ((ServiceUri==null) ? Certes.Acme.WellKnownServers.LetsEncryptV2.ToString() : ServiceUri));
+            Console.WriteLine("Service URI:\t" + ((ServiceUri == null) ? Certes.Acme.WellKnownServers.LetsEncryptV2.ToString() : ServiceUri));
             Console.WriteLine("Account Email:\t" + Email);
             Console.WriteLine("Registered:\t" + (config.ReadIntParameter("registered") == 1 ? "yes" : "no"));
             if (dnsChallengeValidator != null)
@@ -116,6 +118,7 @@ namespace WinCertes
         private static CertesWrapper _certesWrapper;
         private static IConfig _config;
         private static string _winCertesPath;
+        private static string _certTmpPath;
         private static WinCertesOptions _winCertesOptions;
         private static List<string> _domains;
         private static bool _periodic = false;
@@ -246,6 +249,26 @@ namespace WinCertes
             {
                 System.IO.Directory.CreateDirectory(_winCertesPath);
             }
+            _certTmpPath = _winCertesPath + "\\CertsTmp";
+            if (!System.IO.Directory.Exists(_certTmpPath))
+            {
+                System.IO.Directory.CreateDirectory(_certTmpPath);
+            }
+            // We fix the permissions for the certs temporary directory
+            // so that no user can have access to it
+            DirectoryInfo winCertesTmpDi = new DirectoryInfo(_certTmpPath);
+            DirectoryInfo programDataDi = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData));
+            DirectorySecurity programDataDs = programDataDi.GetAccessControl(AccessControlSections.All);
+            DirectorySecurity winCertesTmpDs = winCertesTmpDi.GetAccessControl(AccessControlSections.All);
+            winCertesTmpDs.SetAccessRuleProtection(true, false);
+            foreach (FileSystemAccessRule accessRule in programDataDs.GetAccessRules(true, true, typeof(NTAccount)))
+            {
+                if (accessRule.IdentityReference.Value.IndexOf("Users", StringComparison.InvariantCultureIgnoreCase) < 0)
+                {
+                    winCertesTmpDs.AddAccessRule(accessRule);
+                }
+            }
+            winCertesTmpDi.SetAccessControl(winCertesTmpDs);
         }
 
         /// <summary>
@@ -309,7 +332,8 @@ namespace WinCertes
             if (_show) { _winCertesOptions.displayOptions(_config); return 0; }
 
             // Reset is a full reset !
-            if (_reset) {
+            if (_reset)
+            {
                 IConfig baseConfig = new RegistryConfig(-1);
                 baseConfig.DeleteAllParameters();
                 Utils.DeleteScheduledTasks();
@@ -325,7 +349,7 @@ namespace WinCertes
             if (_winCertesOptions.Revoke > -1) { RevokeCert(_domains, _winCertesOptions.Revoke); return 0; }
             // default mode: enrollment/renewal. check if there's something to be done
             // note that in any case, we want to be able to set the scheduled task (won't do anything if taskName is null)
-            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains,_extra); return 0; }
+            if (!IsThereCertificateAndIsItToBeRenewed(_domains)) { Utils.CreateScheduledTask(taskName, _domains, _extra); return 0; }
 
             // Now the real stuff: we register the order for the domains, and have them validated by the ACME service
             IHTTPChallengeValidator httpChallengeValidator = HTTPChallengeValidatorFactory.GetHTTPChallengeValidator(_winCertesOptions.Standalone, _winCertesOptions.HttpPort, _winCertesOptions.WebRoot);
@@ -335,9 +359,9 @@ namespace WinCertes
             if (httpChallengeValidator != null) httpChallengeValidator.EndAllChallengeValidations();
 
             // We get the certificate from the ACME service
-            var pfx = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _winCertesPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
+            var pfx = Task.Run(() => _certesWrapper.RetrieveCertificate(_domains, _certTmpPath, Utils.DomainsToFriendlyName(_domains))).GetAwaiter().GetResult();
             if (pfx == null) return ERROR;
-             CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, ((_winCertesOptions.Csp == null)&&(!_winCertesOptions.noCsp)));
+            CertificateStorageManager certificateStorageManager = new CertificateStorageManager(pfx, ((_winCertesOptions.Csp == null) && (!_winCertesOptions.noCsp)));
             // Let's process the PFX into Windows Certificate objet.
             certificateStorageManager.ProcessPFX();
             // and we write its information to the WinCertes configuration
