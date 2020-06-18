@@ -2,6 +2,11 @@
 using NLog;
 using NLog.Config;
 using NLog.Targets;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.OpenSsl;
+using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -384,6 +389,29 @@ namespace WinCertes
             catch (Exception e)
             {
                 logger.Error($"Could not retrieve certificate from store: {e.Message}");
+                return null;
+            }
+        }
+
+        public static string GenerateRSAKeyAsPEM(int keySize)
+        {
+            try
+            {
+                IAsymmetricCipherKeyPairGenerator generator = GeneratorUtilities.GetKeyPairGenerator("RSA");
+                RsaKeyGenerationParameters generatorParams = new RsaKeyGenerationParameters(
+                                BigInteger.ValueOf(0x10001), new SecureRandom(), keySize, 12);
+                generator.Init(generatorParams);
+                AsymmetricCipherKeyPair keyPair = generator.GenerateKeyPair();
+                using (StringWriter sw = new StringWriter())
+                {
+                    PemWriter pemWriter = new PemWriter(sw);
+                    pemWriter.WriteObject(keyPair);
+                    return sw.ToString();
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error($"Could not generate new key pair: {e.Message}");
                 return null;
             }
         }

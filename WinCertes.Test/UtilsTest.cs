@@ -32,6 +32,14 @@ namespace WinCertes.Tests
                 Assert.Fail();
             }
         }
+
+        [TestMethod()]
+        public void KeyGenerationTest()
+        {
+            string keyPem = Utils.GenerateRSAKeyAsPEM(2048);
+            if (!keyPem.Contains("BEGIN"))
+                Assert.Fail();
+        }
     }
 }
 

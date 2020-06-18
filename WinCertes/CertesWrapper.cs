@@ -350,8 +350,8 @@ namespace WinCertes
                 if (!System.IO.Directory.Exists(pathForPfx)) throw new Exception("Directory for PFX writing do not exists");
 
                 InitCertes();
-                // Let's generate a new key (RSA is good enough IMHO)
-                IKey certKey = KeyFactory.NewKey(KeyAlgorithm.RS256);
+                // Let's generate a new key (RSA is good enough IMHO)               
+                IKey certKey = KeyFactory.FromPem(Utils.GenerateRSAKeyAsPEM(2048));
                 // Then let's generate the CSR
                 var csr = await _orderCtx.CreateCsr(certKey);
                 csr.AddName("CN", domains[0]);
