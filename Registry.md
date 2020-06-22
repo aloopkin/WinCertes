@@ -1,12 +1,13 @@
 # WinCertes - Registry Settings
 
-Advanced configuration of WinCertes can be perfomed using Registry settings. These settings are located in `HKLM\SOFTWARE\WinCertes`
+Advanced configuration of WinCertes can be perfomed using Registry settings. These settings are located in `HKLM\SOFTWARE\WinCertes`. It is possible to set these options using the --setopt=key:value option in the command line, for instance: `WinCertes.exe ... --setopt=keysize:3072`
 
 General Settings
 -------------
 Some settings are configured automatically using the command line, and thus won't be detailed here. Only additional settings are mentioned
 
 - renewalDays: DWORD, decimal, number of days before certificate expiration when WinCertes should trigger the renewal
+- keySize: DWORD, decimal, size of the RSA keys to be used (e.g. 2048, 3072, 4096)
 
 
 DNS "acme-dns" validation plugin
