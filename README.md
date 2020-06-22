@@ -42,7 +42,7 @@ WinCertes.exe -e me@example.com -d test1.example.com -d test2.example.com -w -b 
 ```
 And... That's all! The certificate is requested from Let's Encrypt, and bound to IIS' Default Web Site
 
-Advanced users can explore the different validation modes, deployment modes and other advanced options. See [Registry Settings](./Registry.md) regarding advanced options and DNS validation modes.
+Advanced users can explore the different validation modes, deployment modes and other advanced options. See [Registry Settings](./docs/Registry.md) regarding advanced options and DNS validation modes.
 
 Command Line Options
 -------------
