@@ -36,6 +36,7 @@ namespace WinCertes
         private AcmeContext _acme;
         private IOrderContext _orderCtx = null;
         private HttpClient _httpClient = null;
+        private int _keySize = 2048;
 
         /// <summary>
         /// Initializes Certes library context
@@ -50,10 +51,10 @@ namespace WinCertes
         /// </summary>
         /// <param name="serviceUri">The ACME service URI (endin in /directory). If null, defaults to Let's encrypt</param>
         /// <param name="accountEmail">The email address to be registered within the ACME account. If null, no email will be used</param>
-        public CertesWrapper(string serviceUri = null, string accountEmail = null)
+        public CertesWrapper(int extra = -1, string serviceUri = null, string accountEmail = null)
         {
             _settings = new CertesSettings();
-            _config = new RegistryConfig();
+            _config = new RegistryConfig(extra);
 
             // Let's initialize the password
             PfxPassword = Guid.NewGuid().ToString("N").Substring(0, 16);
@@ -70,6 +71,8 @@ namespace WinCertes
             }
             // Dealing with account email
             _settings.AccountEmail = accountEmail;
+            if (_config.ReadIntParameter("keySize") > 0)
+                _keySize = _config.ReadIntParameter("keySize");
             // Dealing with key
             if (_config.ReadStringParameter("accountKey") != null)
             {
@@ -77,7 +80,7 @@ namespace WinCertes
             }
             else
             {
-                _settings.AccountKey = KeyFactory.NewKey(KeyAlgorithm.RS256);
+                _settings.AccountKey = KeyFactory.FromPem(Utils.GenerateRSAKeyAsPEM(_keySize));
                 _config.WriteStringParameter("accountKey", _settings.AccountKey.ToPem());
             }
             // Instantiating HTTP Client
@@ -351,7 +354,7 @@ namespace WinCertes
 
                 InitCertes();
                 // Let's generate a new key (RSA is good enough IMHO)               
-                IKey certKey = KeyFactory.FromPem(Utils.GenerateRSAKeyAsPEM(2048));
+                IKey certKey = KeyFactory.FromPem(Utils.GenerateRSAKeyAsPEM(_keySize));
                 // Then let's generate the CSR
                 var csr = await _orderCtx.CreateCsr(certKey);
                 csr.AddName("CN", domains[0]);
