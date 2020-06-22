@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
@@ -45,6 +46,7 @@ namespace WinCertes
         public bool noCsp { get; set; }
         public int RenewalDelay { get; set; }
         public int HttpPort { get; set; }
+        public Dictionary<string, string> MiscOpts { get; set; }
 
         /// <summary>
         /// Writes command line parameters into the specified config
@@ -74,6 +76,13 @@ namespace WinCertes
                 noCsp = config.WriteAndReadBooleanParameter("noCsp", noCsp);
                 // Let's store the CSP name, if any
                 Csp = config.WriteAndReadStringParameter("CSP", Csp);
+                foreach(KeyValuePair<string, string> miscOpt in MiscOpts)
+                {
+                    if (miscOpt.Value.All(char.IsDigit))
+                        config.WriteIntParameter(miscOpt.Key, int.Parse(miscOpt.Value));
+                    else
+                        config.WriteStringParameter(miscOpt.Key, miscOpt.Value);
+                }
             }
             catch (Exception e)
             {
@@ -126,7 +135,7 @@ namespace WinCertes
         private static bool _reset = false;
         private static int _extra = -1;
         private static OptionSet _options;
-
+ 
         private static readonly int ERROR = 1;
         private static readonly int ERROR_INCORRECT_PARAMETER = 2;
 
@@ -138,6 +147,7 @@ namespace WinCertes
         private static bool HandleOptions(string[] args)
         {
             _domains = new List<string>();
+            _winCertesOptions.MiscOpts = new Dictionary<string, string>();
 
             // Options that can be used by this application
             _options = new OptionSet() {
@@ -156,7 +166,8 @@ namespace WinCertes
                 { "show", "show current configuration parameters", v=> _show = (v != null ) },
                 { "reset", "reset all configuration parameters", v=> _reset = (v != null ) },
                 { "extra:", "manages additional certificate(s) instead of the default one, with its own settings. Add an integer index optionally to manage more certs.", (int v) => _extra = v },
-                { "no-csp", "does not import the certificate into CSP. Use with caution, at your own risks. REVOCATION WILL NOT WORK IN THAT MODE.", v=> _winCertesOptions.noCsp = (v != null) }
+                { "no-csp", "does not import the certificate into CSP. Use with caution, at your own risks. REVOCATION WILL NOT WORK IN THAT MODE.", v=> _winCertesOptions.noCsp = (v != null) },
+                { "setopt={:}", "sets configuration options in the form key:value.", (k,v) => _winCertesOptions.MiscOpts.Add(k,v)  }
             };
 
             // and the handling of these options
