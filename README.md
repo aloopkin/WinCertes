@@ -48,7 +48,6 @@ Command Line Options
 -------------
 
 ```dos
-WinCertes.exe:
   -s, --service=VALUE        the ACME Service URI to be used (optional,
                                defaults to Let's Encrypt)
   -e, --email=VALUE          the account email to be used for ACME requests (
@@ -74,7 +73,7 @@ WinCertes.exe:
   -k, --csp=VALUE            import the certificate into specified csp. By
                                default WinCertes imports in the default CSP.
   -t, --renewal=N            trigger certificate renewal N days before
-                               expiration
+                               expiration, default 30
   -l, --listenport=N         listen on port N in standalone mode (for use with -
                                a switch, default 80)
       --show                 show current configuration parameters
@@ -83,7 +82,9 @@ WinCertes.exe:
                                default one, with its own settings. Add an
                                integer index optionally to manage more certs.
       --no-csp               does not import the certificate into CSP. Use with
-                               caution, at your own risks
+                               caution, at your own risks. REVOCATION WILL NOT
+                               WORK IN THAT MODE.
+      --setopt=VALUE1:VALUE2 sets configuration options in the form key:value.
 
 Typical usage: WinCertes.exe -a -e me@example.com -d test1.example.com -d test2.example.com -p
 This will automatically create and register account with email me@example.com, and
@@ -99,7 +100,7 @@ Using Non-Let's Encrypt CA
 By default, WinCertes uses Let's Encrypt (LE) CA to issue SSL certificates. However there are several cases in which one would like to use another CA:
 1. You're testing the certificate deployment for LE: add `-s https://acme-staging-v02.api.letsencrypt.org/directory` to the command line
 2. You want to use another public CA: add `-s https://public-ca-acmev2.example.com` to the command line
-3. You want to use an internal ACMEv2 compliant CA: deploy the internal CA certificates to the Windows Trusted CA store, and add `-s https://internal-ca-acmev2.example.corp` to the command line. If you need a solution to give ACMEv2 capabilities to your internal PKI, you can check e.g. [EverTrust TAP](https://evertrust.fr/en/tap.html).
+3. You want to use an internal ACMEv2 compliant CA: deploy the internal CA certificates to the Windows Trusted CA store, and add `-s https://internal-ca-acmev2.example.corp` to the command line. If you need a solution to give ACMEv2 capabilities to your internal PKI, you can check e.g. [EverTrust Horizon](https://evertrust.fr/en/tap.html).
 
 About PowerShell Scripting
 -------------
