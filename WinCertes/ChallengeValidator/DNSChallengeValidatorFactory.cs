@@ -20,8 +20,13 @@ namespace WinCertes.ChallengeValidator
             if (config.ReadStringParameter("DNSValidatorType") == "acme-dns") {
                 challengeValidator = new DNSChallengeAcmeDnsValidator(config);
             }
-            if (config.ReadStringParameter("DNSValidatorType") == "win-dns") {
+            if (config.ReadStringParameter("DNSValidatorType") == "win-dns")
+            {
                 challengeValidator = new DNSChallengeWinDnsValidator(config);
+            }
+            if (config.ReadStringParameter("DNSValidatorType") == "aws")
+            {
+                challengeValidator = new DNSChallengeAWSValidator(config);
             }
             return challengeValidator;
         }

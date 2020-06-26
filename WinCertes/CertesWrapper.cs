@@ -239,6 +239,9 @@ namespace WinCertes
             var dnsKey = $"_acme-challenge.{domain}".Replace("*.", "");
             if (!dnsChallengeValidator.PrepareChallengeForValidation(dnsKey, dnsValue)) return false;
 
+            // We sleep 5 seconds gefore first check, in order to leave the time to DNS to propagate
+            System.Threading.Thread.Sleep(5000);
+
             // Now let's ping the ACME service to validate the challenge token
             Challenge challengeRes = await dnsChallenge.Validate();
 
