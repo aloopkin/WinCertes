@@ -51,10 +51,10 @@ namespace WinCertes
         /// </summary>
         /// <param name="serviceUri">The ACME service URI (endin in /directory). If null, defaults to Let's encrypt</param>
         /// <param name="accountEmail">The email address to be registered within the ACME account. If null, no email will be used</param>
-        public CertesWrapper(int extra = -1, string serviceUri = null, string accountEmail = null)
+        public CertesWrapper(RegistryConfig config, string serviceUri = null, string accountEmail = null)
         {
             _settings = new CertesSettings();
-            _config = new RegistryConfig(extra);
+            _config = config;
 
             // Let's initialize the password
             PfxPassword = Guid.NewGuid().ToString("N").Substring(0, 16);

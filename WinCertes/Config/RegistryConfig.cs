@@ -9,7 +9,7 @@ namespace WinCertes
     /// <summary>
     /// Configuration class, managing WinCertes configuration into Windows Registry
     /// </summary>
-    class RegistryConfig : IConfig
+    public class RegistryConfig : IConfig
     {
         private static readonly ILogger _logger = LogManager.GetLogger("WinCertes.WinCertesOptions");
 
@@ -53,7 +53,7 @@ namespace WinCertes
                 if (extra > -1)
                 {
                     string extraIndex = "";
-                    if (extra > 1)
+                    if (extra > 0)
                         extraIndex = extra.ToString();
                     if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra" + extraIndex) == null)
                     {
