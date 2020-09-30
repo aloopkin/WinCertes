@@ -9,12 +9,12 @@ namespace WinCertes
     /// <summary>
     /// Configuration class, managing WinCertes configuration into Windows Registry
     /// </summary>
-    class RegistryConfig : IConfig
+    public class RegistryConfig : IConfig
     {
         private static readonly ILogger _logger = LogManager.GetLogger("WinCertes.WinCertesOptions");
 
-        private static string _registryKey = @"HKEY_LOCAL_MACHINE\SOFTWARE\WinCertes";
-        private static string _subKey = @"Software\WinCertes";
+        private string _registryKey = @"HKEY_LOCAL_MACHINE\SOFTWARE\WinCertes";
+        private string _subKey = @"Software\WinCertes";
 
         /// <summary>
         /// Class constructor. if extra = false, builds the base config. if extra = true, builds the extra certificate config.
@@ -224,6 +224,11 @@ namespace WinCertes
             if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra") != null)
             {
                 Registry.LocalMachine.OpenSubKey(_subKey, true).DeleteSubKeyTree("extra");
+            }
+            for (int i = 2; i < 10; i++)
+            {
+                if (Registry.LocalMachine.OpenSubKey("SOFTWARE").OpenSubKey("WinCertes").OpenSubKey("extra" + i) != null)
+                    Registry.LocalMachine.OpenSubKey(_subKey, true).DeleteSubKeyTree("extra" + i);
             }
             foreach (string key in Registry.LocalMachine.OpenSubKey(_subKey).GetValueNames())
             {

@@ -3,7 +3,7 @@
     /// <summary>
     /// Interface to Configuration Engine
     /// </summary>
-    interface IConfig
+    public interface IConfig
     {
         /// <summary>
         /// Deletes parameter from configuration

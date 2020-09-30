@@ -300,10 +300,10 @@ namespace WinCertes
         /// </summary>
         /// <param name="serviceUri">the ACME service URI</param>
         /// <param name="email">the email account used to register</param>
-        private static void InitCertesWrapper(int extra, string serviceUri, string email)
+        private static void InitCertesWrapper(IConfig config, string serviceUri, string email)
         {
             // We get the CertesWrapper object, that will do most of the job.
-            _certesWrapper = new CertesWrapper(extra, serviceUri, email);
+            _certesWrapper = new CertesWrapper(config, serviceUri, email);
 
             // If local computer's account isn't registered on the ACME service, we'll do it.
             if (!_certesWrapper.IsAccountRegistered())
@@ -354,7 +354,7 @@ namespace WinCertes
             // Initialization and renewal/revocation handling
             try
             {
-                InitCertesWrapper(_extra, _winCertesOptions.ServiceUri, _winCertesOptions.Email);
+                InitCertesWrapper(_config, _winCertesOptions.ServiceUri, _winCertesOptions.Email);
             }
             catch (Exception e) { _logger.Error(e.Message); return ERROR; }
             if (_winCertesOptions.Revoke > -1) { RevokeCert(_domains, _winCertesOptions.Revoke); return 0; }
