@@ -341,7 +341,7 @@ namespace WinCertes
             List<string> wDomains = new List<string>(domains);
             wDomains.Sort();
             string domainList = String.Join("-", wDomains);
-            return "_" + GetMD5Hash(MD5.Create(), domainList).Substring(0, 16).ToLower();
+            return "_" + GetMD5Hash(new MD5(), domainList).Substring(0, 16).ToLower();
         }
 
         /// <summary>
