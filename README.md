@@ -20,6 +20,7 @@ Features:
 - DNS challenge validation
 	- Support for Windows DNS Server
 	- Support for [acme-dns](https://github.com/joohoi/acme-dns)
+	- Support for AWS Route53
 - Import of certificate and key into chosen CSP/KSP, enabling compatibility with HSMs
 - Support of any ACMEv2 compliant CA, including Let's Encrypt and Let's Encrypt Staging (for tests/dry-run)
 - Windows Installer for easy deployment
@@ -140,8 +141,8 @@ Copy-Item -Path $key -Destination C:\\Program\ Files\\Apache\ Group\\Apache2\\co
 About IIS Configuration
 -------------
 
-WinCertes can auto-configure IIS regarding the SSL certificate and its bindings. However, IIS configuration needs to be modified in order for 
-WinCertes HTTP validation to work: WinCertes requires the "*" mimetype to be set, else IIS will refuse to serve the challenge file.
+WinCertes can auto-configure IIS regarding the SSL certificate and its bindings (see below for more details). However, IIS configuration needs to be modified in order for 
+WinCertes HTTP validation to work: WinCertes requires the "\*" mimetype to be set, else IIS will refuse to serve the challenge file.
 WinCertes tries to do this automatically as well, but it might fail depending on your version and setup of IIS.
 
 It is possible to fix the issue permanently:
@@ -159,6 +160,20 @@ It is possible to fix the issue permanently:
     </system.webServer>
 </configuration>
 ```
+
+About IIS Bindings
+-------------
+
+The logic for the IIS bindings is the following, executed after the certificate has been issued from the ACME server:
+- list all the SubjectAlternativeNames in the certificate, and for each of them:
+  - for the website whose name is given by the "-b" switch, list the existing https bindings:
+    - if there is none, create one with port 443
+    - if there are bindings, update them using the new certificate
+
+Therefore if you wish to have IIS listen on non-standard ports:
+1. issue the certificate the first time using WinCertes and the "-b" option pointing at the right site
+2. edit the bindings and add/modify them to suit your needs: WinCertes will keep these settings upon renewal
+
 
 Troubleshooting
 -------------
