@@ -121,7 +121,7 @@ namespace WinCertes
         /// <param name="certificate"></param>
         /// <param name="siteName"></param>
         /// <returns>true in case of success, false otherwise</returns>
-        public static bool BindCertificateForIISSite(X509Certificate2 certificate, string siteName)
+        public static bool BindCertificateForIISSite(X509Certificate2 certificate, string siteName, int port)
         {
             if (siteName == null) return false;
             try
@@ -133,28 +133,55 @@ namespace WinCertes
                     logger.Error($"Could not find IIS site {siteName}");
                     return false;
                 }
-                foreach (string sanDns in ParseSubjectAlternativeName(certificate))
+                if (port > 0)
                 {
                     bool foundBinding = false;
                     foreach (Binding binding in site.Bindings)
                     {
                         if (binding.Protocol == "https")
                         {
-                            if (binding.Host.Equals(sanDns, StringComparison.OrdinalIgnoreCase))
+                            if (binding.EndPoint.Port == port)
                             {
                                 binding.CertificateHash = certificate.GetCertHash();
                                 binding.CertificateStoreName = "MY";
                                 foundBinding = true;
+                                logger.Debug("Found binding by port for site: " + siteName + " Will update it with cert with serial: " + certificate.SerialNumber);
                             }
                         }
                     }
                     if (!foundBinding)
                     {
-                        Binding binding = site.Bindings.Add("*:443:" + sanDns, certificate.GetCertHash(), "MY");
+                        Binding binding = site.Bindings.Add("*:" + port + ":", certificate.GetCertHash(), "MY");
                         binding.Protocol = "https";
+                        logger.Debug("Could not find binding, will try to create one on port " + port);
                     }
                 }
-
+                else
+                {
+                    foreach (string sanDns in ParseSubjectAlternativeName(certificate))
+                    {
+                        bool foundBinding = false;
+                        foreach (Binding binding in site.Bindings)
+                        {
+                            if (binding.Protocol == "https")
+                            {
+                                if (binding.Host.Equals(sanDns, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    binding.CertificateHash = certificate.GetCertHash();
+                                    binding.CertificateStoreName = "MY";
+                                    foundBinding = true;
+                                    logger.Debug("Found binding by hostname for site: " + siteName + " Will update it with cert with serial: " + certificate.SerialNumber);
+                                }
+                            }
+                        }
+                        if (!foundBinding)
+                        {
+                            Binding binding = site.Bindings.Add("*:443:" + sanDns, certificate.GetCertHash(), "MY");
+                            binding.Protocol = "https";
+                            logger.Debug("Could not find binding, will try to create one on port 443");
+                        }
+                    }
+                }
                 if (site.ApplicationDefaults.EnabledProtocols.Split(',').Contains("http"))
                     site.ApplicationDefaults.EnabledProtocols = "http,https";
                 else

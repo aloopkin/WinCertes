@@ -39,6 +39,7 @@ namespace WinCertes
         public string Email { get; set; }
         public string WebRoot { get; set; }
         public string BindName { get; set; }
+        public int BindPort { get; set; }
         public string ScriptFile { get; set; }
         public bool Standalone { get; set; }
         public int Revoke { get; set; }
@@ -66,6 +67,7 @@ namespace WinCertes
                 WebRoot = config.WriteAndReadStringParameter("webRoot", WebRoot);
                 // Should we bind to IIS? If yes, let's do some config
                 BindName = config.WriteAndReadStringParameter("bindName", BindName);
+                BindPort = config.WriteAndReadIntParameter("bindPort", BindPort, 0);
                 // Should we execute some PowerShell ? If yes, let's do some config
                 ScriptFile = config.WriteAndReadStringParameter("scriptFile", ScriptFile);
                 // Writing renewal delay to conf
@@ -76,7 +78,7 @@ namespace WinCertes
                 noCsp = config.WriteAndReadBooleanParameter("noCsp", noCsp);
                 // Let's store the CSP name, if any
                 Csp = config.WriteAndReadStringParameter("CSP", Csp);
-                foreach(KeyValuePair<string, string> miscOpt in MiscOpts)
+                foreach (KeyValuePair<string, string> miscOpt in MiscOpts)
                 {
                     if (miscOpt.Value.All(char.IsDigit))
                         config.WriteIntParameter(miscOpt.Key, int.Parse(miscOpt.Value));
@@ -135,7 +137,7 @@ namespace WinCertes
         private static bool _reset = false;
         private static int _extra = -1;
         private static OptionSet _options;
- 
+
         private static readonly int ERROR = 1;
         private static readonly int ERROR_INCORRECT_PARAMETER = 2;
 
@@ -157,6 +159,7 @@ namespace WinCertes
                 { "w|webserver:", "toggles the local web server use and sets its {ROOT} directory (default c:\\inetpub\\wwwroot). Activates HTTP validation mode.", v => _winCertesOptions.WebRoot = v ?? "c:\\inetpub\\wwwroot" },
                 { "p|periodic", "should WinCertes create the Windows Scheduler task to handle certificate renewal (default=no)", v => _periodic = (v != null) },
                 { "b|bindname=", "IIS site name to bind the certificate to, e.g. \"Default Web Site\". Defaults to no binding.", v => _winCertesOptions.BindName = v },
+                { "n|bindport=", "IIS site port to bind the certificate to, e.g. 443. Defaults to 443, used only if -b is specified.", (int v) => _winCertesOptions.BindPort = v },
                 { "f|scriptfile=", "PowerShell Script file e.g. \"C:\\Temp\\script.ps1\" to execute upon successful enrollment (default=none)", v => _winCertesOptions.ScriptFile = v },
                 { "a|standalone", "should WinCertes create its own WebServer for validation. Activates HTTP validation mode. WARNING: it will use port 80 unless -l is specified.", v => _winCertesOptions.Standalone = (v != null) },
                 { "r|revoke:", "should WinCertes revoke the certificate identified by its domains (to be used only with -d). {REASON} is an optional integer between 0 and 5.", (int v) => _winCertesOptions.Revoke = v },
@@ -381,7 +384,10 @@ namespace WinCertes
             if (!_winCertesOptions.noCsp) certificateStorageManager.ImportCertificateIntoCSP(_winCertesOptions.Csp);
 
             // Bind certificate to IIS Site (won't do anything if option is null)
-            Utils.BindCertificateForIISSite(certificateStorageManager.Certificate, _winCertesOptions.BindName);
+            if (Utils.BindCertificateForIISSite(certificateStorageManager.Certificate, _winCertesOptions.BindName, _winCertesOptions.BindPort))
+                _logger.Info("Successfully bound certificate for IIS site: " + _winCertesOptions.BindName);
+            else
+                _logger.Debug("Certificate not bound to any IIS site");
             // Execute PowerShell Script (won't do anything if option is null)
             Utils.ExecutePowerShell(_winCertesOptions.ScriptFile, pfx);
             // Create the AT task that will execute WinCertes periodically (won't do anything if taskName is null)
