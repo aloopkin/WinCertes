@@ -32,13 +32,24 @@ jobs:
       - name: Restore NuGet Packages
         run: nuget restore WinCertes.sln
         
-      - name: Build and Publish Web App
+      - name: Build WinCertes Release
         run: msbuild WinCertes.sln /p:Configuration=Release /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
-        
-      - name: Upload a Build Artifact
+
+      - name: Build WinCertes Debug
+        run: msbuild WinCertes.sln /p:Configuration=Debug /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
+
+      - name: Upload WinCertes Release Artifact
         uses: actions/upload-artifact@v2.3.0
         with:
           # Artifact name
           name: WinCertes.msi
           # A file, directory or wildcard pattern that describes what to upload
           path: MSIPackaging\bin\Release\WinCertes.msi
+
+      - name: Upload WinCertes Debug Artifact
+        uses: actions/upload-artifact@v2.3.0
+        with:
+          # Artifact name
+          name: WinCertes-Debug.msi
+          # A file, directory or wildcard pattern that describes what to upload
+          path: MSIPackaging\bin\Debug\WinCertes.msi
