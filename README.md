@@ -61,6 +61,8 @@ Command Line Options
                                to handle certificate renewal (default=no)
   -b, --bindname=VALUE       IIS site name to bind the certificate to, e.g. "
                                Default Web Site". Defaults to no binding.
+  -n, --bindport=VALUE       IIS site port to bind the certificate to, e.g. 443. 
+                               Defaults to 443, used only if -b is specified.
   -f, --scriptfile=VALUE     PowerShell Script file e.g. "C:\Temp\script.ps1"
                                to execute upon successful enrollment (default=
                                none)
