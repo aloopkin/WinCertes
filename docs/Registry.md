@@ -32,3 +32,13 @@ This plugin allows to update Windows DNS server records. All the parameters are 
 - DNSServerUser:  The Windows DNS Server User, with enough rights on the server to update DNS contents, e.g. Administrator
 - DNSServerPassword: The password of the aformentioned Windows DNS Server User
 - DNSServerZone: The DNS Zone in which are the hosts to be validated, and as declared in the Windows DNS Server, e.g. example.corp
+
+
+DNS "PowerShell" validation plugin
+-------------
+
+This plugin allows to launch a PowerShell script to update remote DNS record. All the parameter are "String" parameters.
+
+- DNSValidatorType: ps
+- DNSScriptFile: The full path to the PowerShell script that will be launched. The script will get dnsKeyName and dnsKeyValue as its parameters.
+
