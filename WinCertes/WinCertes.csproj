@@ -123,6 +123,7 @@
     <Compile Include="CertificateStorageManager.cs" />
     <Compile Include="ChallengeValidator\DNSChallengeAcmeDnsValidator.cs" />
     <Compile Include="ChallengeValidator\DNSChallengeAWSValidator.cs" />
+    <Compile Include="ChallengeValidator\DNSChallengePowerShellValidator.cs" />
     <Compile Include="ChallengeValidator\DNSChallengeValidatorFactory.cs" />
     <Compile Include="ChallengeValidator\DNSChallengeWinDnsValidator.cs" />
     <Compile Include="ChallengeValidator\HTTPChallengeValidatorFactory.cs" />
