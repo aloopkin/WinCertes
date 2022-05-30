@@ -202,7 +202,12 @@ namespace WinCertes
                 {
                     logger.Debug($"Initiating DNS Validation for {res.Identifier.Value}");
                     var resValidation = await ValidateDNSChallenge(res.Identifier.Value, dnsChallenge, dnsChallengeValidator);
-                    if (!resValidation) throw new Exception($"Could not validate DNS challenge:\n {dnsChallenge.Resource().Result.Error.Detail}");
+                    if (!resValidation)
+                    {
+                        if (dnsChallenge.Resource().Result.Error != null)
+                            throw new Exception($"Could not validate DNS challenge:\n {dnsChallenge.Resource().Result.Error.Detail}");
+                        else throw new Exception("Could not validate DNS Challenge.");
+                    }
                 }
                 else throw new Exception("DNS Challenge Validation set up, but server sent no DNS Challenge");
             }
