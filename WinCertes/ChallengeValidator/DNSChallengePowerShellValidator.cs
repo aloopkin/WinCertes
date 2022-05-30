@@ -1,10 +1,6 @@
 ﻿using NLog;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Management.Automation.Runspaces;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace WinCertes.ChallengeValidator
 {
@@ -36,7 +32,7 @@ namespace WinCertes.ChallengeValidator
 
                 // We create the script to execute with its arguments as a Command
                 System.Management.Automation.Runspaces.Command myCommand = new System.Management.Automation.Runspaces.Command(scriptFile);
-                CommandParameter dnsKeyNameParam = new CommandParameter("dnsKeyName",dnsKeyValue);
+                CommandParameter dnsKeyNameParam = new CommandParameter("dnsKeyName", dnsKeyName);
                 myCommand.Parameters.Add(dnsKeyNameParam);
                 CommandParameter dnsKeyValueParam = new CommandParameter("dnsKeyValue", dnsKeyValue);
                 myCommand.Parameters.Add(dnsKeyValueParam);
@@ -46,6 +42,10 @@ namespace WinCertes.ChallengeValidator
 
                 // and we invoke it
                 var results = pipeline.Invoke();
+                foreach (var item in results)
+                {
+                    logger.Debug("PS Output: " + item);
+                }
                 logger.Info($"Executed DNS Challenge Script {scriptFile}.");
                 return true;
             }
